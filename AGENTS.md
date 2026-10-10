@@ -48,14 +48,15 @@
 
 装置の構成は、**YAMLのモデル定義を正本**にします（`design/models/*.yaml`）。人もAIも、構成を確かめるときはYAMLを読みます。
 
-- 部品（id・種類・寸法・しきい値・位置）、つながり、人の操作、期待されるふるまい、前提（✅💭❓）を書く。
+- 書き方は [design/models/SCHEMA.md](design/models/SCHEMA.md)。部品（id・種類・寸法・しきい値・位置）、人の操作（判断なし）、入力と期待される出力（cases）、前提（✅💭❓）を書く。
 - 図は YAML から自動生成する。**図を手で直さず、YAMLを直して作り直す**。
   ```
   pip install -r requirements.txt
-  python tools/render_iso.py design/models/level1_counter.yaml --pulses 5 -o images/<ファイル名>.svg
+  python tools/render_iso.py design/models/level2_full_adder.yaml -o images/<ファイル名>.svg
+  python tools/svg2png.py images/<ファイル名>.svg
   ```
-  生成時に、YAML の `expected`（期待されるふるまい）をシミュレーションで照合し、結果を表示する。食い違いがあれば終了コード1で終わる。
-- PNGが必要なら、SVGをブラウザで開いて書き出す。
+  生成時に、YAML の `cases` をすべてシミュレーションで照合し、結果を表示する。食い違いがあれば終了コード1で終わる。
+- `svg2png.py` はヘッドレスの Chrome／Edge で同じ大きさのPNGを書き出す（環境変数 BROWSER でブラウザを指定できる）。
 
 ## 作業を終えるとき
 1. [HANDOFF.md](HANDOFF.md) を更新する。

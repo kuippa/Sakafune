@@ -1,11 +1,12 @@
 """YAMLのモデル定義から、3D斜め見下ろし（アイソメトリック）の模式図をSVGで描く。
 
 使い方:
-    python tools/render_iso.py design/models/level1_counter.yaml --pulses 5 -o images/out.svg
+    python tools/render_iso.py design/models/level2_full_adder.yaml -o images/out.svg [--case a1b0c1]
 
-- 図の寸法・しきい値・つながりは、すべてYAMLから読む（図はYAMLの写し）。
-- --pulses N で、N回注いだ後の水の状態を簡易シミュレーションして描く。
-- YAMLの expected（期待されるふるまい）を、同じシミュレーションで照合して結果を表示する。
+- 図の寸法・しきい値・つながりは、すべてYAMLから読む（図はYAMLの写し）。書き方は design/models/SCHEMA.md。
+- YAMLの cases（入力と期待される出力）を、すべて簡易シミュレーションで照合して結果を表示する。
+  食い違いがあれば終了コード1で終わる。
+- 図には --case（省略時は readout.default_case）を実行した後の水の状態を描く。
 """
 
 import argparse
@@ -25,9 +26,11 @@ COL = {
     "wall": "#c98b5a",      # 土器
     "wall_edge": "#7a4a26",
     "tube": "#6b8f2a",      # 竹
+    "plug": "#8a5a2b",      # 木の栓・注ぎ口
     "water": "#3d8fd6",
     "water_top": "#8fc3ec",
     "flow": "#2f7fc8",
+    "thr": "#c0392b",
     "panel": "#fffdf7",
     "panel_edge": "#c9bfa8",
 }
@@ -50,35 +53,58 @@ def height_cm(part, volume_ml):
     return volume_ml / area_cm2(part)  # 1 mL = 1 cm^3
 
 
-def simulate(model, pulses):
-    """N回注いだ後の各部品の水量（mL）を返す。"""
-    parts = {p["id"]: p for p in model["parts"]}
-    u = model["units"]["u_mL"]
-    vol = {pid: 0.0 for pid in parts}
-    pour = next(c for c in model["connections"] if c["kind"] == "pour")
-    for _ in range(pulses):
-        vol[pour["to"]] += pour["amount_u"] * u
+class Sim:
+    """部品の水量（mL）を持ち、操作ごとにサイフォン・溢れを落ち着くまで進める。"""
+
+    def __init__(self, model):
+        self.parts = {p["id"]: p for p in model["parts"]}
+        self.vol = {pid: 0.0 for pid in self.parts}
+
+    def settle(self):
         changed = True
-        while changed:  # サイフォンの連鎖が落ち着くまで
+        while changed:
             changed = False
-            for p in model["parts"]:
-                if p["type"] == "siphon_cup" and vol[p["id"]] >= p["threshold_mL"]:
-                    vol[p["siphon_to"]] += vol[p["id"]]
-                    vol[p["id"]] = 0.0
+            for pid, p in self.parts.items():
+                v = self.vol[pid]
+                if p["type"] == "siphon_cup" and v >= p["threshold_mL"] - 1e-9:
+                    self.vol[p["siphon_to"]] += v
+                    self.vol[pid] = 0.0
                     changed = True
-    return vol
+                elif p["type"] == "metering_cup" and v > p["volume_mL"] + 1e-9:
+                    extra = v - p["volume_mL"]
+                    self.vol[pid] = p["volume_mL"]
+                    if p.get("overflow_to"):
+                        self.vol[p["overflow_to"]] += extra
+                    changed = True
+
+    def do(self, step):
+        if "fill" in step:
+            p = self.parts[step["fill"]]
+            self.vol[p["id"]] = p["volume_mL"]
+        elif "release" in step:
+            pid = step["release"]
+            self.vol[self.parts[pid]["drain_to"]] += self.vol[pid]
+            self.vol[pid] = 0.0
+        self.settle()
 
 
-def bits_of(model, vol):
-    cups = sorted((p for p in model["parts"] if p["type"] == "siphon_cup"), key=lambda p: p["bit"])
-    return "".join("1" if vol[p["id"]] > 0 else "0" for p in reversed(cups))
+def run_case(model, case):
+    sim = Sim(model)
+    for pid, on in (case.get("inputs") or {}).items():
+        if on:
+            sim.do({"fill": pid})
+    for _ in range(case.get("repeat", 1)):
+        for step in model["procedure"]:
+            sim.do(step)
+    return sim.vol
 
 
-def check_expected(model):
+def check_cases(model):
     results = []
-    for e in model.get("expected", []):
-        got = bits_of(model, simulate(model, e["pulses"]))
-        results.append((e["pulses"], e["bits"], got, got == e["bits"]))
+    for case in model.get("cases", []):
+        vol = run_case(model, case)
+        got = {k: int(vol[k] > 1e-9) for k in case["expect"]}
+        results.append((case["id"], case["expect"], got, got == case["expect"]))
     return results
 
 
@@ -153,7 +179,7 @@ def cylinder_shape(iso, x, y, z0, z1, r):
     return body, (cx, top, rx, ry), (cx, bot, rx, ry)
 
 
-def draw_vessel(iso, part, water_ml, show_tube):
+def draw_vessel(iso, part, water_ml):
     x, y, z = part["position"]
     r = part["inner_diameter_cm"] / 2
     h = part_height(part)
@@ -164,31 +190,40 @@ def draw_vessel(iso, part, water_ml, show_tube):
     out.append(f'<ellipse cx="{cx:.1f}" cy="{top:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" '
                f'fill="{COL["wall"]}" fill-opacity="0.25" stroke="none"/>')
     # 水
-    if water_ml > 0:
-        wh = height_cm(part, water_ml)
+    if water_ml > 1e-9:
+        wh = min(height_cm(part, water_ml), h)
         wbody, (wcx, wtop, wrx, wry), _ = cylinder_shape(iso, x, y, z, z + wh, r * 0.97)
         out.append(f'<path d="{wbody}" fill="{COL["water"]}" fill-opacity="0.75"/>')
         out.append(f'<ellipse cx="{wcx:.1f}" cy="{wtop:.1f}" rx="{wrx:.1f}" ry="{wry:.1f}" '
                    f'fill="{COL["water_top"]}"/>')
-    # 内側の管（しきい値の高さまで）
-    if show_tube:
+    if part["type"] == "siphon_cup":
+        # 内側の管（しきい値の高さまで）
         th = height_cm(part, part["threshold_mL"])
         tx, ty0 = iso.p(x, y, z)
         _, ty1 = iso.p(x, y, z + th)
-        w = max(2.5, part["siphon_tube_inner_diameter_mm"] * 0.12 * iso.s)
+        w = max(2.5, part.get("siphon_tube_inner_diameter_mm", 5) * 0.12 * iso.s)
         out.append(f'<rect x="{tx - w:.1f}" y="{ty1 - w:.1f}" width="{2 * w:.1f}" '
                    f'height="{ty0 - ty1 + w:.1f}" rx="{w:.1f}" fill="{COL["tube"]}" '
                    f'fill-opacity="0.85" stroke="#3f5a12" stroke-width="1"/>')
-        # しきい値の線（器の奥の壁に引いた目盛り）
+        # しきい値の線（器の壁に引いた目盛り）
         _, lt = iso.p(x, y, z + th)
         out.append(f'<ellipse cx="{cx:.1f}" cy="{lt:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="none" '
-                   f'stroke="#c0392b" stroke-width="1.4" stroke-dasharray="5 4"/>')
+                   f'stroke="{COL["thr"]}" stroke-width="1.4" stroke-dasharray="5 4"/>')
+    if part["type"] == "metering_cup" and part.get("overflow_to"):
+        # 溢れ口（縁の切り欠き）
+        out.append(f'<rect x="{cx + rx - 5:.1f}" y="{top - 2:.1f}" width="10" height="6" '
+                   f'fill="{COL["bg"]}" stroke="{COL["wall_edge"]}" stroke-width="1.5"/>')
     # 手前の壁と縁
     out.append(f'<path d="{body}" fill="{COL["wall"]}" fill-opacity="0.22" '
                f'stroke="{COL["wall_edge"]}" stroke-width="2"/>')
     out.append(f'<ellipse cx="{cx:.1f}" cy="{top:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="none" '
                f'stroke="{COL["wall_edge"]}" stroke-width="2"/>')
-    return out, (cx, top, rx, ry, bot)
+    if part["type"] == "siphon_cup" and part.get("drain_to"):
+        # 栓（手前の壁の下のほう）
+        px, py = cx + rx * 0.55, bot + ry * 0.55
+        out.append(f'<rect x="{px - 5:.1f}" y="{py - 9:.1f}" width="10" height="12" rx="2" '
+                   f'fill="{COL["plug"]}" stroke="#4a2e12"/>')
+    return out, {"cx": cx, "top": top, "rx": rx, "ry": ry, "bot": bot}
 
 
 def arrow_defs():
@@ -200,11 +235,14 @@ def arrow_defs():
 </defs>"""
 
 
-def callout(px, py, bx, by, lines, width=250):
+def callout(px, py, bx, by, lines, width=260):
     """(px,py) を指す矢印つきの注釈の箱。lines=[(text, size, weight)]"""
     lh = [l[1] + 6 for l in lines]
     h = sum(lh) + 14
-    out = [f'<line x1="{bx:.1f}" y1="{by + h / 2:.1f}" x2="{px:.1f}" y2="{py:.1f}" '
+    # 箱の辺のうち、指す点に近い側から線を出す
+    sx = bx + width if px > bx + width else (bx if px < bx else px)
+    sy = by + h if py > by + h else (by if py < by else by + h / 2)
+    out = [f'<line x1="{sx:.1f}" y1="{sy:.1f}" x2="{px:.1f}" y2="{py:.1f}" '
            f'stroke="{COL["sub"]}" stroke-width="1.3" marker-end="url(#ahk)"/>',
            f'<rect x="{bx:.1f}" y="{by:.1f}" width="{width}" height="{h:.1f}" rx="6" '
            f'fill="{COL["panel"]}" stroke="{COL["panel_edge"]}"/>']
@@ -215,6 +253,22 @@ def callout(px, py, bx, by, lines, width=250):
     return out
 
 
+def callout_lines(part, vol_ml, u, inputs):
+    lines = [(f"{part['id']}：{part['name']}", 14, "bold")]
+    if part["type"] == "siphon_cup":
+        lines.append((f"しきい値 θ = {part['threshold_mL'] / u:g}u（{part['threshold_mL']}mL）"
+                      f"／容量 {part['capacity_mL']}mL", 12, "normal"))
+    for n in part.get("notes", []):
+        lines.append((n, 12, "normal"))
+    if part["id"] in inputs:
+        v = int(bool(inputs[part["id"]]))
+        lines.append((f"入力値：{v}（{'1u 満たして注いだ' if v else '空のまま'}）", 12, "bold"))
+        return lines
+    state = f"水あり（{vol_ml / u:g}u）→ 1" if vol_ml > 1e-9 else "空 → 0"
+    lines.append((f"いま：{state}", 12, "bold"))
+    return lines
+
+
 def cross_section(x0, y0, cup, u):
     """教訓桝の断面図（説明用の小窓）。寸法は模式。"""
     w, h = 150, 150
@@ -222,149 +276,174 @@ def cross_section(x0, y0, cup, u):
     lvl = y0 + 30 + h * (1 - th_ratio * 0.95)
     tube_top = y0 + 30 + h * (1 - th_ratio)
     cx = x0 + 30 + w / 2
+    base = y0 + 30 + h
     out = [f'<rect x="{x0}" y="{y0}" width="{w + 220}" height="{h + 110}" rx="8" '
            f'fill="{COL["panel"]}" stroke="{COL["panel_edge"]}"/>',
-           text(x0 + 14, y0 + 22, "教訓桝の断面（模式）", 15, "bold")]
-    # 器
-    out.append(f'<path d="M{x0 + 30},{y0 + 30} L{x0 + 30},{y0 + 30 + h} L{x0 + 30 + w},{y0 + 30 + h} '
-               f'L{x0 + 30 + w},{y0 + 30}" fill="none" stroke="{COL["wall_edge"]}" stroke-width="3"/>')
-    # 水（しきい値の少し下）
-    out.append(f'<rect x="{x0 + 32}" y="{lvl:.1f}" width="{w - 4}" height="{y0 + 30 + h - lvl - 2:.1f}" '
-               f'fill="{COL["water"]}" fill-opacity="0.55"/>')
-    # 内側の管と外側のかぶせ管（逆U字）
-    out.append(f'<path d="M{cx - 6},{y0 + 30 + h + 30} L{cx - 6},{tube_top:.1f} '
-               f'M{cx + 6},{y0 + 30 + h + 30} L{cx + 6},{tube_top:.1f}" '
-               f'stroke="{COL["tube"]}" stroke-width="4" fill="none"/>')
-    out.append(f'<path d="M{cx - 16},{y0 + 30 + h - 6} L{cx - 16},{tube_top - 10:.1f} '
-               f'Q{cx},{tube_top - 24:.1f} {cx + 16},{tube_top - 10:.1f} L{cx + 16},{y0 + 30 + h - 6}" '
-               f'stroke="{COL["tube"]}" stroke-width="3" fill="none" stroke-dasharray="1 0"/>')
-    # しきい値の線
-    out.append(f'<line x1="{x0 + 30}" y1="{tube_top:.1f}" x2="{x0 + 30 + w}" y2="{tube_top:.1f}" '
-               f'stroke="#c0392b" stroke-width="1.5" stroke-dasharray="5 4"/>')
-    out.append(f'<line x1="{cx}" y1="{y0 + 30 + h + 8}" x2="{cx}" y2="{y0 + 30 + h + 34}" '
-               f'stroke="{COL["flow"]}" stroke-width="3" marker-end="url(#ah)"/>')
+           text(x0 + 14, y0 + 22, "教訓桝の断面（模式）", 15, "bold"),
+           f'<path d="M{x0 + 30},{y0 + 30} L{x0 + 30},{base} L{x0 + 30 + w},{base} '
+           f'L{x0 + 30 + w},{y0 + 30}" fill="none" stroke="{COL["wall_edge"]}" stroke-width="3"/>',
+           f'<rect x="{x0 + 32}" y="{lvl:.1f}" width="{w - 4}" height="{base - lvl - 2:.1f}" '
+           f'fill="{COL["water"]}" fill-opacity="0.55"/>',
+           f'<path d="M{cx - 6},{base + 30} L{cx - 6},{tube_top:.1f} M{cx + 6},{base + 30} '
+           f'L{cx + 6},{tube_top:.1f}" stroke="{COL["tube"]}" stroke-width="4" fill="none"/>',
+           f'<path d="M{cx - 16},{base - 6} L{cx - 16},{tube_top - 10:.1f} Q{cx},{tube_top - 24:.1f} '
+           f'{cx + 16},{tube_top - 10:.1f} L{cx + 16},{base - 6}" stroke="{COL["tube"]}" '
+           f'stroke-width="3" fill="none"/>',
+           f'<line x1="{x0 + 30}" y1="{tube_top:.1f}" x2="{x0 + 30 + w}" y2="{tube_top:.1f}" '
+           f'stroke="{COL["thr"]}" stroke-width="1.5" stroke-dasharray="5 4"/>',
+           f'<line x1="{cx}" y1="{base + 8}" x2="{cx}" y2="{base + 34}" '
+           f'stroke="{COL["flow"]}" stroke-width="3" marker-end="url(#ah)"/>']
     tx = x0 + 30 + w + 16
-    out += [text(tx, tube_top + 4, f"しきい値 θ（{cup['threshold_mL'] / u:g}u）", 13, "bold", "#c0392b"),
+    out += [text(tx, tube_top + 4, f"しきい値 θ（{cup['threshold_mL'] / u:g}u）", 13, "bold", COL["thr"]),
             text(tx, tube_top + 22, "ここを超えると", 12),
             text(tx, tube_top + 38, "サイフォンが起動し", 12),
             text(tx, tube_top + 54, "中身が全部抜ける", 12),
             text(tx, tube_top + 84, "竹の内管＋かぶせ管", 12, fill="#3f5a12"),
             text(tx, tube_top + 100, "（逆U字のサイフォン）", 12, fill="#3f5a12"),
-            text(tx, y0 + 30 + h + 40, "↓ 下の桝へ（桁上り）", 12, fill=COL["flow"])]
+            text(tx, base + 40, "↓ サイフォン出口", 12, fill=COL["flow"])]
+    if cup.get("drain_to"):
+        out += [f'<rect x="{x0 + 30 + w - 10}" y="{base - 22}" width="16" height="12" rx="2" '
+                f'fill="{COL["plug"]}" stroke="#4a2e12"/>',
+                text(x0 + 30, base + 62, "■ 栓（後の段階で抜く）", 12, fill=COL["plug"])]
     return out
+
+
+def readout_panel(model, case, vol, x, y):
+    ro = model["readout"]
+    out = []
+    if ro["kind"] == "binary":
+        bits = "".join("1" if vol[i] > 1e-9 else "0" for i in ro["order"])
+        title = f"図の状態：{case.get('repeat', 1)}回注いだ後"
+        out += [text(x + 16, y + 76, f"{' '.join(ro['order'])} = {' '.join(bits)}", 24, "bold", COL["flow"]),
+                text(x + 16, y + 108, f"＝ 2進数 {bits} ＝ {int(bits, 2)}", 16)]
+    else:
+        title = f"図の状態：case {case['id']} の後"
+        ins = "　".join(f"{i['label']}={int(bool((case.get('inputs') or {}).get(i['id'])))}"
+                       for i in ro.get("inputs", []))
+        outs = "　".join(f"{i['label']}={int(vol[i['id']] > 1e-9)}" for i in ro["items"])
+        out += [text(x + 16, y + 66, f"入力：{ins}", 16),
+                text(x + 16, y + 100, f"出力：{outs}", 20, "bold", COL["flow"])]
+    out = [f'<rect x="{x}" y="{y}" width="364" height="150" rx="8" fill="{COL["panel"]}" '
+           f'stroke="{COL["panel_edge"]}"/>', text(x + 16, y + 30, title, 17, "bold")] + out
+    out.append(text(x + 16, y + 134, "水が残っている器＝1、空の器＝0", 13, fill=COL["sub"]))
+    return out
+
+
+def procedure_panel(model, x, y):
+    lines = []
+    for s in model["procedure"]:
+        act = f"{s['fill']} を満たす" if "fill" in s else f"{s['release']} の栓を抜く／注ぐ"
+        lines.append(f"{s.get('phase', '')}：{act}")
+    h = 40 + 20 * len(lines)
+    out = [f'<rect x="{x}" y="{y}" width="364" height="{h}" rx="8" fill="{COL["panel"]}" '
+           f'stroke="{COL["panel_edge"]}"/>', text(x + 16, y + 26, "人の操作（判断なし・この順に）", 15, "bold")]
+    for i, l in enumerate(lines):
+        out.append(text(x + 16, y + 50 + 20 * i, f"{i + 1}. {l}", 13))
+    return out, h
+
+
+def legend(x, y):
+    return [f'<rect x="{x}" y="{y}" width="364" height="140" rx="8" fill="{COL["panel"]}" '
+            f'stroke="{COL["panel_edge"]}"/>',
+            text(x + 16, y + 26, "凡例", 15, "bold"),
+            f'<rect x="{x + 16}" y="{y + 38}" width="26" height="14" fill="{COL["wall"]}" '
+            f'fill-opacity="0.4" stroke="{COL["wall_edge"]}"/>',
+            text(x + 52, y + 50, "土器の器", 13),
+            f'<rect x="{x + 190}" y="{y + 38}" width="10" height="13" rx="2" fill="{COL["plug"]}"/>',
+            text(x + 210, y + 50, "木の栓", 13),
+            f'<rect x="{x + 16}" y="{y + 62}" width="26" height="8" fill="{COL["tube"]}"/>',
+            text(x + 52, y + 71, "竹の管（サイフォン）", 13),
+            f'<line x1="{x + 16}" y1="{y + 90}" x2="{x + 42}" y2="{y + 90}" stroke="{COL["thr"]}" '
+            f'stroke-width="2" stroke-dasharray="5 4"/>',
+            text(x + 52, y + 95, "しきい値の高さ", 13),
+            f'<line x1="{x + 16}" y1="{y + 116}" x2="{x + 42}" y2="{y + 116}" stroke="{COL["flow"]}" '
+            f'stroke-width="3" marker-end="url(#ah)"/>',
+            text(x + 52, y + 121, "水の流れ（緑の管＝サイフォン、茶の点線＝栓・注ぎ）", 12)]
 
 
 # ------------------------------------------------------------------
 # 図の組み立て
 # ------------------------------------------------------------------
-def render(model, pulses, W=1500, H=860):
-    parts = {p["id"]: p for p in model["parts"]}
-    u = model["units"]["u_mL"]
-    vol = simulate(model, pulses)
-    bits = bits_of(model, vol)
-    iso = fit(model, (300, 170, 1060, H - 80))
+def connections(model):
+    """parts の siphon_to / drain_to / overflow_to から、流れの一覧を作る。"""
+    out = []
+    for p in model["parts"]:
+        for key in ("siphon_to", "drain_to", "overflow_to"):
+            if p.get(key):
+                out.append((p, key, p[key]))
+    return out
 
-    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" '
-           f'font-family="{FONT}">', arrow_defs(),
-           f'<rect width="{W}" height="{H}" fill="{COL["bg"]}"/>']
+
+def render(model, case, W=1500, H=None):
+    parts = {p["id"]: p for p in model["parts"]}
+    H = H or max(860, 475 + 40 + 20 * len(model["procedure"]) + 300)
+    u = model["units"]["u_mL"]
+    vol = run_case(model, case)
+    iso = fit(model, (300, 190, 1060, H - 80))
 
     m = model["meta"]
-    svg += [text(36, 52, f"{m['title']} ― 3D斜め見下ろし模式図", 30, "bold"),
-            text(36, 84, f"モデル定義：design/models/{m['id']}.yaml から自動生成。"
-                         f"作成：{m['author']}（{m['created']}）。状態：{m['status']}", 15, fill=COL["sub"]),
-            text(36, 108, "土器の器（教訓桝）を階段状に積む。上から1uずつ注ぐと、"
-                          "各桝に残る水が2進数の各ビットになる。", 15, fill=COL["sub"])]
+    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" '
+           f'font-family="{FONT}">', arrow_defs(),
+           f'<rect width="{W}" height="{H}" fill="{COL["bg"]}"/>',
+           text(36, 52, f"{m['title']} ― 3D斜め見下ろし模式図", 30, "bold"),
+           text(36, 84, f"モデル定義：design/models/{m['id']}.yaml から自動生成。"
+                        f"作成：{m['author']}（{m['created']}）。状態：{m['status']}", 15, fill=COL["sub"]),
+           text(36, 108, m.get("caption", ""), 15, fill=COL["sub"])]
 
-    # 器（奥から手前の順＝x の小さい順）
+    # 器（奥から手前の順に描く）
     geo = {}
-    for p in sorted(model["parts"], key=lambda q: q["position"][0]):
-        water = vol.get(p["id"], 0.0)
-        if p["type"] == "metering_cup":
-            water = p["volume_mL"]
-        shapes, g = draw_vessel(iso, p, water, p["type"] == "siphon_cup")
+    for p in sorted(model["parts"], key=lambda q: q["position"][0] + q["position"][1]):
+        shapes, g = draw_vessel(iso, p, vol.get(p["id"], 0.0))
         geo[p["id"]] = g
         svg += shapes
 
-    # 流れ（つながり）
-    for c in model["connections"]:
-        a, b = parts[c["from"]], parts[c["to"]]
+    # 流れ
+    for a, kind, to in connections(model):
+        b = parts[to]
         ax, ay, az = a["position"]
         bx, by, bz = b["position"]
-        _, _, _, _, abot = geo[a["id"]]
-        _, btop, _, _, _ = geo[b["id"]]
-        if c["kind"] == "pour":
-            sx, sy = iso.p(ax + 2, ay, az + part_height(a))
-            ex, ey = iso.p(bx, by, bz + part_height(b) + 2)
-            svg.append(f'<path d="M{sx:.1f},{sy:.1f} Q{(sx + ex) / 2 + 30:.1f},{sy - 30:.1f} '
-                       f'{ex:.1f},{ey:.1f}" fill="none" stroke="{COL["flow"]}" stroke-width="4" '
-                       f'marker-end="url(#ah)"/>')
-        else:
-            # サイフォン出口：底から下へ出て、次の器の上へ（竹の管）
+        ex, ey = iso.p(bx, by, bz + part_height(b) + 3)
+        g = geo[a["id"]]
+        if kind == "siphon_to":
             sx, sy = iso.p(ax, ay, az)
             dx, dy = iso.p(ax, ay, az - 6)
-            ex, ey = iso.p(bx, by, bz + part_height(b) + 3)
             d = f"M{sx:.1f},{sy:.1f} L{dx:.1f},{dy:.1f} Q{dx:.1f},{ey - 10:.1f} {ex:.1f},{ey:.1f}"
             svg.append(f'<path d="{d}" fill="none" stroke="{COL["tube"]}" stroke-width="7" '
                        f'stroke-linecap="round" stroke-opacity="0.8"/>')
             svg.append(f'<path d="{d}" fill="none" stroke="{COL["flow"]}" stroke-width="2" '
                        f'stroke-dasharray="6 5" marker-end="url(#ah)"/>')
-            mx, my = (dx + ex) / 2, (dy + ey) / 2
-            svg.append(text(mx + 4, my - 12, f"{c['amount_u']}u 落ちる", 13, "bold", COL["flow"]))
+        elif kind == "drain_to":
+            if a["type"] == "metering_cup":   # 注ぐ（縁から）
+                sx, sy = g["cx"] + g["rx"], g["top"]
+                d = f"M{sx:.1f},{sy:.1f} Q{(sx + ex) / 2 + 20:.1f},{min(sy, ey) - 30:.1f} {ex:.1f},{ey:.1f}"
+            else:                             # 栓から
+                sx, sy = g["cx"] + g["rx"] * 0.55, g["bot"] + g["ry"] * 0.55
+                d = f"M{sx:.1f},{sy:.1f} Q{sx + 10:.1f},{ey:.1f} {ex:.1f},{ey:.1f}"
+            svg.append(f'<path d="{d}" fill="none" stroke="{COL["plug"]}" stroke-width="2.5" '
+                       f'stroke-dasharray="7 5" marker-end="url(#ah)"/>')
+        else:  # overflow_to
+            sx, sy = g["cx"] + g["rx"], g["top"]
+            d = f"M{sx:.1f},{sy:.1f} Q{sx + 20:.1f},{ey:.1f} {ex:.1f},{ey:.1f}"
+            svg.append(f'<path d="{d}" fill="none" stroke="{COL["sub"]}" stroke-width="1.6" '
+                       f'stroke-dasharray="3 4" marker-end="url(#ahk)"/>')
 
     # 注釈
-    L = parts["L"]
-    lcx, ltop, lrx, _, _ = geo["L"]
-    svg += callout(lcx - lrx, ltop, 36, 140,
-                   [(f"入力：{L['name']}", 14, "bold"),
-                    ("溢れ口までちょうど1uを量り、", 12, "normal"),
-                    ("S0 に一気に注ぐ（人の操作）", 12, "normal")], 230)
-
     for p in model["parts"]:
-        if p["type"] != "siphon_cup":
-            continue
-        cx, top, rx, ry, bot = geo[p["id"]]
-        has = vol[p["id"]] > 0
-        svg += callout(cx - rx * 0.7, bot, cx - rx - 290, bot + 6,
-                       [(f"{p['id']}：{p['name']}（bit{p['bit']}＝{p['weight_u']}u）", 14, "bold"),
-                        (f"しきい値 θ = {p['threshold_mL'] / u:g}u（{p['threshold_mL']}mL）", 12, "normal"),
-                        (f"容量 {p['capacity_mL']}mL／内径 {p['inner_diameter_cm']}cm", 12, "normal"),
-                        (f"いま：{'水あり → 1' if has else '空 → 0'}", 12, "bold")], 255)
+        g = geo[p["id"]]
+        dx, dy = p.get("callout", [-290, 6])
+        ax, ay = g["cx"] - g["rx"], g["bot"]
+        svg += callout(g["cx"] - g["rx"] * 0.7, g["bot"], ax + dx, ay + dy,
+                       callout_lines(p, vol.get(p["id"], 0.0), u, case.get("inputs") or {}))
 
-    o = parts["OUT"]
-    ocx, otop, orx, _, _ = geo["OUT"]
-    _, _, _, _, obot = geo["OUT"]
-    svg += callout(ocx - orx * 0.7, obot, ocx - orx - 270, obot - 10,
-                   [(f"{o['name']}", 14, "bold"),
-                    ("16回目で S3 から16uが落ちる", 12, "normal"),
-                    ("（4ビットを超えた桁上り）", 12, "normal")], 230)
-
-    # 状態パネル
-    px, py = 1100, 140
-    svg += [f'<rect x="{px}" y="{py}" width="364" height="150" rx="8" fill="{COL["panel"]}" '
-            f'stroke="{COL["panel_edge"]}"/>',
-            text(px + 16, py + 30, f"図の状態：{pulses}回注いだ後", 17, "bold"),
-            text(px + 16, py + 76, f"S3 S2 S1 S0 = {' '.join(bits)}", 26, "bold", COL["flow"]),
-            text(px + 16, py + 108, f"＝ 2進数 {bits} ＝ {int(bits, 2)}", 16),
-            text(px + 16, py + 134, "水が残っている桝＝1、空の桝＝0", 13, fill=COL["sub"])]
-
-    # 凡例
-    lx, ly = 1100, 310
-    svg += [f'<rect x="{lx}" y="{ly}" width="364" height="140" rx="8" fill="{COL["panel"]}" '
-            f'stroke="{COL["panel_edge"]}"/>',
-            text(lx + 16, ly + 26, "凡例", 15, "bold"),
-            f'<rect x="{lx + 16}" y="{ly + 38}" width="26" height="14" fill="{COL["wall"]}" '
-            f'fill-opacity="0.4" stroke="{COL["wall_edge"]}"/>',
-            text(lx + 52, ly + 50, "土器の器（教訓桝）", 13),
-            f'<rect x="{lx + 16}" y="{ly + 62}" width="26" height="8" fill="{COL["tube"]}"/>',
-            text(lx + 52, ly + 71, "竹の管（サイフォン）", 13),
-            f'<line x1="{lx + 16}" y1="{ly + 90}" x2="{lx + 42}" y2="{ly + 90}" stroke="#c0392b" '
-            f'stroke-width="2" stroke-dasharray="5 4"/>',
-            text(lx + 52, ly + 95, "しきい値の高さ", 13),
-            f'<line x1="{lx + 16}" y1="{ly + 116}" x2="{lx + 42}" y2="{ly + 116}" stroke="{COL["flow"]}" '
-            f'stroke-width="3" marker-end="url(#ah)"/>',
-            text(lx + 52, ly + 121, "水の流れ", 13)]
-
-    svg += cross_section(1100, 470, parts["S0"], u)
+    # 右側のパネル
+    px = 1100
+    svg += readout_panel(model, case, vol, px, 140)
+    proc, ph = procedure_panel(model, px, 305)
+    svg += proc
+    svg += legend(px, 320 + ph)
+    cups = [p for p in model["parts"] if p["type"] == "siphon_cup"]
+    if cups:
+        svg += cross_section(px, 475 + ph, cups[0], u)
 
     svg.append(text(W - 20, H - 18, "寸法は設計値（未試作）。❓の前提は YAML の assumptions を参照", 12,
                     fill=COL["sub"], anchor="end"))
@@ -375,17 +454,19 @@ def render(model, pulses, W=1500, H=860):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("model")
-    ap.add_argument("--pulses", type=int, default=5)
+    ap.add_argument("--case", help="図に描く case の id（省略時は readout.default_case）")
     ap.add_argument("-o", "--out", required=True)
     args = ap.parse_args()
 
     model = load_model(args.model)
     ok = True
-    for n, want, got, good in check_expected(model):
-        print(f"expected pulses={n:2d}: want {want} got {got} {'OK' if good else 'NG'}")
+    for cid, want, got, good in check_cases(model):
+        print(f"case {cid:8s}: want {want} got {got} {'OK' if good else 'NG'}")
         ok &= good
-    Path(args.out).write_text(render(model, args.pulses), encoding="utf-8")
-    print(f"wrote {args.out}")
+    cid = args.case or model["readout"].get("default_case") or model["cases"][0]["id"]
+    case = next(c for c in model["cases"] if c["id"] == cid)
+    Path(args.out).write_text(render(model, case), encoding="utf-8")
+    print(f"wrote {args.out}（case {cid}）")
     sys.exit(0 if ok else 1)
 
 

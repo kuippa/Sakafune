@@ -1,144 +1,107 @@
 # レベル1：教訓桝カウンタ（4ビット）のモデル定義
-# このファイルが正本。図（tools/render_iso.py で生成）とシミュレータはここから作る。
+# このファイルが正本。書き方は SCHEMA.md を参照。
 # 状態の記号：✅確認済み / 💭推論・設計値 / ❓要確認（試作・調査で確かめる）
 
 meta:
   id: level1_counter
   title: 教訓桝カウンタ（4ビット）
-  design_doc: ../01_minimal-device.md#2-レベル1教訓桝カウンタいちばん単純な計算装置
+  design_doc: ../01_minimal-device.md
   author: claude-opus-5-5
   created: 2026-10-10
   status: 💭 設計値（未試作）
-  summary: >
-    教訓桝（中身がしきい値を超えると、サイフォンで全部抜ける器）を階段状に積む。
-    上から1単位ずつ注ぐと、各桝に残る水が2進数の各ビットになる。
-    桝が2回分溜まると全部抜けて下の桝へ落ち、それが桁上りになる。
+  caption: 土器の器（教訓桝）を階段状に積む。上から1uずつ注ぐと、各桝に残る水が2進数の各ビットになる。
 
 units:
   length: cm
   volume: mL
   u_mL: 100          # 1単位（u）の水の量 💭
 
-# ---------------------------------------------------------------
-# 部品
-#   position: 器の底の中心の座標 [x, y, z]（cm）。z が高さ。
-#   siphon_cup の形は円筒で近似する。高さは容量と内径から計算する。
-# ---------------------------------------------------------------
 parts:
   - id: L
     type: metering_cup
-    name: 計量の器（1u）
-    role: 入力。溢れ口までちょうど1uを量る
+    name: 計量の器（入力）
     volume_mL: 100
     inner_diameter_cm: 6
     position: [-16, 14, 116]
+    drain_to: S0
+    notes: [溢れ口までちょうど1uを量り、, S0 に一気に注ぐ（人の操作）]
+    callout: [-264, -70]
 
   - id: S0
     type: siphon_cup
-    name: 教訓桝0
-    bit: 0
-    weight_u: 1            # 満ちたときに表す値（u）
+    name: 教訓桝0（bit0＝1u）
     inner_diameter_cm: 7
     threshold_mL: 150      # 1.5u。1回分（1u）と2回分（2u）の中間 💭
     capacity_mL: 250       # 2回分＋余裕 💭
     siphon_tube_inner_diameter_mm: 5   # ❓ 確実に起動する太さは試作で決める
-    drain_plug: true       # リセット専用の栓
     position: [0, 0, 90]
     siphon_to: S1
+    callout: [-290, 6]
 
   - id: S1
     type: siphon_cup
-    name: 教訓桝1
-    bit: 1
-    weight_u: 2
+    name: 教訓桝1（bit1＝2u）
     inner_diameter_cm: 9
     threshold_mL: 300      # 3u
     capacity_mL: 500
     siphon_tube_inner_diameter_mm: 6   # ❓
-    drain_plug: true
     position: [26, -18, 62]
     siphon_to: S2
+    callout: [-290, 6]
 
   - id: S2
     type: siphon_cup
-    name: 教訓桝2
-    bit: 2
-    weight_u: 4
+    name: 教訓桝2（bit2＝4u）
     inner_diameter_cm: 12
     threshold_mL: 600      # 6u
     capacity_mL: 1000
     siphon_tube_inner_diameter_mm: 8   # ❓
-    drain_plug: true
     position: [54, -38, 34]
     siphon_to: S3
+    callout: [-290, 6]
 
   - id: S3
     type: siphon_cup
-    name: 教訓桝3
-    bit: 3
-    weight_u: 8
+    name: 教訓桝3（bit3＝8u）
     inner_diameter_cm: 15
     threshold_mL: 1200     # 12u
     capacity_mL: 2000
     siphon_tube_inner_diameter_mm: 10  # ❓
-    drain_plug: true
     position: [86, -60, 6]
     siphon_to: OUT
+    callout: [-290, 6]
 
   - id: OUT
     type: basin
     name: 桁あふれの受け
-    role: 16回目で S3 から 16u が落ちてくる（4ビットを超えた桁上り）
     inner_diameter_cm: 20
     capacity_mL: 3000
     position: [122, -86, -24]
+    notes: [16回目で S3 から16uが落ちる, （4ビットを超えた桁上り）]
+    callout: [-270, -10]
 
-# ---------------------------------------------------------------
-# つながり
-#   pour   : 人が注ぐ
-#   siphon : 教訓桝のサイフォン出口からの流れ（自動）
-# ---------------------------------------------------------------
-connections:
-  - {from: L,  to: S0,  kind: pour,   amount_u: 1}
-  - {from: S0, to: S1,  kind: siphon, amount_u: 2}
-  - {from: S1, to: S2,  kind: siphon, amount_u: 4}
-  - {from: S2, to: S3,  kind: siphon, amount_u: 8}
-  - {from: S3, to: OUT, kind: siphon, amount_u: 16}
+# 1回分の操作（判断なし）。cases の repeat 回だけ繰り返す
+procedure:
+  - {phase: 入力, fill: L}
+  - {phase: 入力, release: L}   # ❓ 何秒以内に注げば確実にサイフォンが起動するか
 
-# ---------------------------------------------------------------
-# 人の操作（すべて判断なし）
-# ---------------------------------------------------------------
-operations:
-  pulse:
-    name: 1回注ぐ
-    steps:
-      - 計量の器 L を溢れるまで満たす（ちょうど1u）
-      - L の中身を S0 に一気に注ぐ        # ❓ 何秒以内なら確実にサイフォンが起動するか
-      - 流れが止まるまで待つ               # ❓ 待ち時間の目安は試作で決める
-  reset:
-    name: リセット
-    steps:
-      - すべての教訓桝の栓を抜いて空にし、栓を戻す
+cases:
+  - {id: n0,  repeat: 0,  expect: {S3: 0, S2: 0, S1: 0, S0: 0}}
+  - {id: n1,  repeat: 1,  expect: {S3: 0, S2: 0, S1: 0, S0: 1}}
+  - {id: n2,  repeat: 2,  expect: {S3: 0, S2: 0, S1: 1, S0: 0}}
+  - {id: n3,  repeat: 3,  expect: {S3: 0, S2: 0, S1: 1, S0: 1}}
+  - {id: n5,  repeat: 5,  expect: {S3: 0, S2: 1, S1: 0, S0: 1}}
+  - {id: n15, repeat: 15, expect: {S3: 1, S2: 1, S1: 1, S0: 1}}
+  - {id: n16, repeat: 16, expect: {S3: 0, S2: 0, S1: 0, S0: 0, OUT: 1}}
 
 readout:
-  rule: 各教訓桝に水が残っていれば、そのビットは1
-  value: sum(bit_i × 2^i)
+  kind: binary
+  order: [S3, S2, S1, S0]
+  default_case: n5
 
-# ---------------------------------------------------------------
-# 期待されるふるまい（シミュレータと試作で確かめる）
-# ---------------------------------------------------------------
-expected:
-  - {pulses: 0,  bits: "0000"}
-  - {pulses: 1,  bits: "0001"}
-  - {pulses: 2,  bits: "0010"}
-  - {pulses: 3,  bits: "0011"}
-  - {pulses: 5,  bits: "0101"}
-  - {pulses: 15, bits: "1111"}
-  - {pulses: 16, bits: "0000", note: OUT に 16u（桁あふれ）}
+reset:
+  - すべての教訓桝の中身を捨てて空にする（リセット専用の栓、または器を傾ける）
 
-# ---------------------------------------------------------------
-# 前提と未確認事項
-# ---------------------------------------------------------------
 assumptions:
   - id: A1
     text: 教訓桝はしきい値を超えると、必ず中身を全部出し切る

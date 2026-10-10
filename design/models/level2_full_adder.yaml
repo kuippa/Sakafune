@@ -1,0 +1,161 @@
+# レベル2：栓付きの教訓桝2つで作る全加算器のモデル定義
+# このファイルが正本。書き方は SCHEMA.md を参照。
+# 状態の記号：✅確認済み / 💭推論・設計値 / ❓要確認（試作・調査で確かめる）
+#
+# 考え方（設計01 §3.1）：
+#   栓付きの教訓桝（θ=1.5u）に x, y を入れると、
+#     サイフォン出口 ＝ x AND y（2u が全部抜ける）
+#     栓の出口（後の段階で抜く） ＝ x XOR y（1u が残っている）
+#   これを2つつなぐと全加算器になる。
+#     HA1：a, b を受ける
+#     HA2：c と、HA1 の XOR を受ける
+#     和 S    ＝ HA2 の栓の出口           ＝ a XOR b XOR c
+#     桁上り C ＝ HA1 か HA2 のサイフォン出口 ＝ ab ＋ c(a XOR b)
+#   HA1 と HA2 のサイフォンは同時には起きない（ab=1 なら a XOR b=0）ので、
+#   同じ計量の器 C_out で受けて 1u に揃えるだけでよい（OR ゲートが要らない）。
+
+meta:
+  id: level2_full_adder
+  title: 全加算器（栓付きの教訓桝2つ）
+  design_doc: ../01_minimal-device.md
+  author: claude-opus-5-5
+  created: 2026-10-10
+  status: 💭 設計値（未試作）
+  caption: 1ビットの a・b・c を足して、和 S と桁上り C を出す。段階1で入力を注ぎ、段階2・3で決まった順に栓を抜く。
+
+units:
+  length: cm
+  volume: mL
+  u_mL: 100
+
+parts:
+  # ---- 入力（人がデータとして満たしておく計量の器） ----
+  - id: IA
+    type: metering_cup
+    name: 入力 a
+    volume_mL: 100
+    inner_diameter_cm: 6
+    position: [-30, 30, 90]
+    drain_to: HA1
+    callout: [-250, -40]
+
+  - id: IB
+    type: metering_cup
+    name: 入力 b
+    volume_mL: 100
+    inner_diameter_cm: 6
+    position: [-19, 19, 90]
+    drain_to: HA1
+    callout: [50, -70]
+
+  - id: IC
+    type: metering_cup
+    name: 入力 c（下の桁からの桁上り）
+    volume_mL: 100
+    inner_diameter_cm: 6
+    position: [5, -5, 76]
+    drain_to: HA2
+    callout: [60, -50]
+
+  # ---- 演算 ----
+  - id: HA1
+    type: siphon_cup
+    name: 教訓桝 HA1（a と b）
+    inner_diameter_cm: 7
+    threshold_mL: 150
+    capacity_mL: 250
+    siphon_tube_inner_diameter_mm: 5   # ❓
+    position: [-25, 25, 60]
+    siphon_to: C_out        # a AND b
+    drain_to: HA2           # a XOR b（段階2で栓を抜く）
+    notes: [サイフォン → a AND b（2u）, 栓（段階2）→ a XOR b（1u）]
+    callout: [-300, -10]
+
+  - id: HA2
+    type: siphon_cup
+    name: 教訓桝 HA2（c と a XOR b）
+    inner_diameter_cm: 7
+    threshold_mL: 150
+    capacity_mL: 250
+    siphon_tube_inner_diameter_mm: 5   # ❓
+    position: [10, -10, 36]
+    siphon_to: C_out        # c AND (a XOR b)
+    drain_to: S_out         # a XOR b XOR c（段階3で栓を抜く）
+    notes: [サイフォン → c AND (a XOR b)（2u）, 栓（段階3）→ 和 S（1u）]
+    callout: [90, -20]
+
+  # ---- 出力 ----
+  - id: C_out
+    type: metering_cup
+    name: 出力：桁上り C
+    volume_mL: 100            # 2u 来ても 1u だけ残し、残りは W へ溢れる
+    inner_diameter_cm: 6
+    position: [-7, 7, 10]
+    overflow_to: W
+    notes: [HA1 か HA2 のサイフォン水（2u）を受け、, 1u に揃える（余りは捨て溝へ）]
+    callout: [-300, 0]
+
+  - id: S_out
+    type: basin
+    name: 出力：和 S
+    inner_diameter_cm: 8
+    capacity_mL: 300
+    position: [40, -40, 6]
+    callout: [-140, 50]
+
+  - id: W
+    type: basin
+    name: 捨て溝の受け
+    inner_diameter_cm: 12
+    capacity_mL: 1000
+    position: [15, -15, -16]
+    callout: [70, 0]
+
+procedure:
+  - {phase: "段階1 入力", release: IA}
+  - {phase: "段階1 入力", release: IB}
+  - {phase: "段階1 入力", release: IC}
+  - {phase: "段階2", release: HA1}     # HA1 の栓を抜く → a XOR b が HA2 へ
+  - {phase: "段階3", release: HA2}     # HA2 の栓を抜く → 和 S
+
+cases:
+  - {id: a0b0c0, inputs: {IA: 0, IB: 0, IC: 0}, expect: {S_out: 0, C_out: 0}}
+  - {id: a1b0c0, inputs: {IA: 1, IB: 0, IC: 0}, expect: {S_out: 1, C_out: 0}}
+  - {id: a0b1c0, inputs: {IA: 0, IB: 1, IC: 0}, expect: {S_out: 1, C_out: 0}}
+  - {id: a1b1c0, inputs: {IA: 1, IB: 1, IC: 0}, expect: {S_out: 0, C_out: 1}}
+  - {id: a0b0c1, inputs: {IA: 0, IB: 0, IC: 1}, expect: {S_out: 1, C_out: 0}}
+  - {id: a1b0c1, inputs: {IA: 1, IB: 0, IC: 1}, expect: {S_out: 0, C_out: 1}}
+  - {id: a0b1c1, inputs: {IA: 0, IB: 1, IC: 1}, expect: {S_out: 0, C_out: 1}}
+  - {id: a1b1c1, inputs: {IA: 1, IB: 1, IC: 1}, expect: {S_out: 1, C_out: 1}}
+
+readout:
+  kind: named
+  inputs:
+    - {id: IA, label: a}
+    - {id: IB, label: b}
+    - {id: IC, label: c}
+  items:
+    - {id: C_out, label: 桁上り C}
+    - {id: S_out, label: 和 S}
+  default_case: a1b0c1
+
+reset:
+  - 出力の器（C_out・S_out）と捨て溝の受け（W）を空にする
+  - 教訓桝の栓を戻す
+
+assumptions:
+  - id: B1
+    text: 栓（木または粘土）は、抜くまで水を漏らさない
+    status: ❓
+  - id: B2
+    text: 入力 a と b は続けて注げば、HA1 の中で合わさって 2u になり、サイフォンが起動する（a のあと b を注ぐまでの間に漏れない）
+    status: ❓
+  - id: B3
+    text: 段階1で HA2 に入った c（1u）は、段階2で a XOR b（1u）が来るまで、しきい値の下で待っている
+    status: 💭
+  - id: B4
+    text: HA1 と HA2 のサイフォンが同時に起きることはない（ab=1 なら a XOR b=0）ので、C_out で受けて 1u に揃えるだけで OR の代わりになる
+    status: 💭 論理的に確認済み（全8通りを cases で照合）
+  - id: B5
+    text: 計量の器 C_out は、2u が一度に来ても 1u を残して余りを正確に溢れさせる
+    status: ❓

@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 915" width="1500" height="915" font-family="'Yu Gothic','Meiryo','Hiragino Sans','Noto Sans CJK JP',sans-serif">
+<defs>
+  <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#2f7fc8"/></marker>
+  <marker id="ahk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#6a5e4c"/></marker>
+</defs>
+<rect width="1500" height="915" fill="#f7f2e7"/>
+<text x="36.0" y="52.0" font-size="30" font-weight="bold" fill="#3a3226" text-anchor="start">全加算器（栓付きの教訓桝2つ） ― 3D斜め見下ろし模式図</text>
+<text x="36.0" y="84.0" font-size="15" font-weight="normal" fill="#6a5e4c" text-anchor="start">モデル定義：design/models/level2_full_adder.yaml から自動生成。作成：claude-opus-5-5（2026-10-10）。状態：💭 設計値（未試作）</text>
+<text x="36.0" y="108.0" font-size="15" font-weight="normal" fill="#6a5e4c" text-anchor="start">1ビットの a・b・c を足して、和 S と桁上り C を出す。段階1で入力を注ぎ、段階2・3で決まった順に栓を抜く。</text>
+<path d="M354.4,225.0 L354.4,245.3 A18.4,10.6 0 0 0 391.1,245.3 L391.1,225.0 A18.4,10.6 0 0 1 354.4,225.0 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="372.7" cy="225.0" rx="18.4" ry="10.6" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M354.4,225.0 L354.4,245.3 A18.4,10.6 0 0 0 391.1,245.3 L391.1,225.0 A18.4,10.6 0 0 1 354.4,225.0 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="372.7" cy="225.0" rx="18.4" ry="10.6" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<path d="M449.6,225.0 L449.6,245.3 A18.4,10.6 0 0 0 486.3,245.3 L486.3,225.0 A18.4,10.6 0 0 1 449.6,225.0 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="467.9" cy="225.0" rx="18.4" ry="10.6" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M449.6,225.0 L449.6,245.3 A18.4,10.6 0 0 0 486.3,245.3 L486.3,225.0 A18.4,10.6 0 0 1 449.6,225.0 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="467.9" cy="225.0" rx="18.4" ry="10.6" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<path d="M657.3,294.9 L657.3,315.3 A18.4,10.6 0 0 0 694.0,315.3 L694.0,294.9 A18.4,10.6 0 0 1 657.3,294.9 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="675.7" cy="294.9" rx="18.4" ry="10.6" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M657.3,294.9 L657.3,315.3 A18.4,10.6 0 0 0 694.0,315.3 L694.0,294.9 A18.4,10.6 0 0 1 657.3,294.9 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="675.7" cy="294.9" rx="18.4" ry="10.6" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<path d="M394.6,362.8 L394.6,395.2 A21.4,12.4 0 0 0 437.4,395.2 L437.4,362.8 A21.4,12.4 0 0 1 394.6,362.8 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="416.0" cy="362.8" rx="21.4" ry="12.4" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<rect x="413.0" y="372.8" width="6.0" height="22.5" rx="3.0" fill="#6b8f2a" fill-opacity="0.85" stroke="#3f5a12" stroke-width="1"/>
+<ellipse cx="416.0" cy="375.8" rx="21.4" ry="12.4" fill="none" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="5 4"/>
+<path d="M394.6,362.8 L394.6,395.2 A21.4,12.4 0 0 0 437.4,395.2 L437.4,362.8 A21.4,12.4 0 0 1 394.6,362.8 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="416.0" cy="362.8" rx="21.4" ry="12.4" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<rect x="422.8" y="393.0" width="10" height="12" rx="2" fill="#8a5a2b" stroke="#4a2e12"/>
+<path d="M697.5,482.7 L697.5,515.2 A21.4,12.4 0 0 0 740.4,515.2 L740.4,482.7 A21.4,12.4 0 0 1 697.5,482.7 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="719.0" cy="482.7" rx="21.4" ry="12.4" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<rect x="716.0" y="492.7" width="6.0" height="22.5" rx="3.0" fill="#6b8f2a" fill-opacity="0.85" stroke="#3f5a12" stroke-width="1"/>
+<ellipse cx="719.0" cy="495.7" rx="21.4" ry="12.4" fill="none" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="5 4"/>
+<path d="M697.5,482.7 L697.5,515.2 A21.4,12.4 0 0 0 740.4,515.2 L740.4,482.7 A21.4,12.4 0 0 1 697.5,482.7 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="719.0" cy="482.7" rx="21.4" ry="12.4" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<rect x="725.7" y="513.0" width="10" height="12" rx="2" fill="#8a5a2b" stroke="#4a2e12"/>
+<path d="M553.4,624.8 L553.4,645.1 A18.4,10.6 0 0 0 590.2,645.1 L590.2,624.8 A18.4,10.6 0 0 1 553.4,624.8 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="571.8" cy="624.8" rx="18.4" ry="10.6" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M554.0,627.4 L554.0,645.1 A17.8,10.3 0 0 0 589.6,645.1 L589.6,627.4 A17.8,10.3 0 0 1 554.0,627.4 Z" fill="#3d8fd6" fill-opacity="0.75"/>
+<ellipse cx="571.8" cy="627.4" rx="17.8" ry="10.3" fill="#8fc3ec"/>
+<rect x="585.2" y="622.8" width="10" height="6" fill="#f7f2e7" stroke="#7a4a26" stroke-width="1.5"/>
+<path d="M553.4,624.8 L553.4,645.1 A18.4,10.6 0 0 0 590.2,645.1 L590.2,624.8 A18.4,10.6 0 0 1 553.4,624.8 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="571.8" cy="624.8" rx="18.4" ry="10.6" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<path d="M954.1,635.3 L954.1,665.1 A24.5,14.1 0 0 0 1003.1,665.1 L1003.1,635.3 A24.5,14.1 0 0 1 954.1,635.3 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="978.6" cy="635.3" rx="24.5" ry="14.1" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M954.1,635.3 L954.1,665.1 A24.5,14.1 0 0 0 1003.1,665.1 L1003.1,635.3 A24.5,14.1 0 0 1 954.1,635.3 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="978.6" cy="635.3" rx="24.5" ry="14.1" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<path d="M725.5,730.8 L725.5,775.0 A36.7,21.2 0 0 0 799.0,775.0 L799.0,730.8 A36.7,21.2 0 0 1 725.5,730.8 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="762.2" cy="730.8" rx="36.7" ry="21.2" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M726.6,770.6 L726.6,775.0 A35.6,20.6 0 0 0 797.9,775.0 L797.9,770.6 A35.6,20.6 0 0 1 726.6,770.6 Z" fill="#3d8fd6" fill-opacity="0.75"/>
+<ellipse cx="762.2" cy="770.6" rx="35.6" ry="20.6" fill="#8fc3ec"/>
+<path d="M725.5,730.8 L725.5,775.0 A36.7,21.2 0 0 0 799.0,775.0 L799.0,730.8 A36.7,21.2 0 0 1 725.5,730.8 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="762.2" cy="730.8" rx="36.7" ry="21.2" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<path d="M391.1,225.0 Q423.5,195.0 416.0,347.8" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M486.3,225.0 Q471.1,195.0 416.0,347.8" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M694.0,294.9 Q726.5,264.9 719.0,467.7" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M416.0,395.2 L416.0,425.2 Q416.0,599.8 571.8,609.8" fill="none" stroke="#6b8f2a" stroke-width="7" stroke-linecap="round" stroke-opacity="0.8"/>
+<path d="M416.0,395.2 L416.0,425.2 Q416.0,599.8 571.8,609.8" fill="none" stroke="#2f7fc8" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ah)"/>
+<path d="M427.8,402.0 Q437.8,467.7 719.0,467.7" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M719.0,515.2 L719.0,545.2 Q719.0,599.8 571.8,609.8" fill="none" stroke="#6b8f2a" stroke-width="7" stroke-linecap="round" stroke-opacity="0.8"/>
+<path d="M719.0,515.2 L719.0,545.2 Q719.0,599.8 571.8,609.8" fill="none" stroke="#2f7fc8" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ah)"/>
+<path d="M730.7,522.0 Q740.7,620.3 978.6,620.3" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M590.2,624.8 Q610.2,715.9 762.2,715.9" fill="none" stroke="#6a5e4c" stroke-width="1.6" stroke-dasharray="3 4" marker-end="url(#ahk)"/>
+<line x1="359.9" y1="231.3" x2="359.9" y2="245.3" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="104.4" y="205.3" width="260" height="52.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="114.4" y="229.3" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">IA：入力 a</text>
+<text x="114.4" y="247.3" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">入力値：1（1u 満たして注いだ）</text>
+<line x1="499.6" y1="227.3" x2="455.1" y2="245.3" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="499.6" y="175.3" width="260" height="52.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="509.6" y="199.3" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">IB：入力 b</text>
+<text x="509.6" y="217.3" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">入力値：0（空のまま）</text>
+<line x1="717.3" y1="291.3" x2="662.8" y2="315.3" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="717.3" y="265.3" width="260" height="52.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="727.3" y="289.3" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">IC：入力 c（下の桁からの桁上り）</text>
+<text x="727.3" y="307.3" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">入力値：1（1u 満たして注いだ）</text>
+<line x1="354.6" y1="438.2" x2="401.0" y2="395.2" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="94.6" y="385.2" width="260" height="106.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="104.6" y="409.2" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">HA1：教訓桝 HA1（a と b）</text>
+<text x="104.6" y="427.2" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">しきい値 θ = 1.5u（150mL）／容量 250mL</text>
+<text x="104.6" y="445.2" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">サイフォン → a AND b（2u）</text>
+<text x="104.6" y="463.2" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">栓（段階2）→ a XOR b（1u）</text>
+<text x="104.6" y="481.2" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：空 → 0</text>
+<line x1="787.5" y1="548.2" x2="704.0" y2="515.2" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="787.5" y="495.2" width="260" height="106.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="797.5" y="519.2" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">HA2：教訓桝 HA2（c と a XOR b）</text>
+<text x="797.5" y="537.2" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">しきい値 θ = 1.5u（150mL）／容量 250mL</text>
+<text x="797.5" y="555.2" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">サイフォン → c AND (a XOR b)（2u）</text>
+<text x="797.5" y="573.2" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">栓（段階3）→ 和 S（1u）</text>
+<text x="797.5" y="591.2" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：空 → 0</text>
+<line x1="513.4" y1="689.1" x2="559.0" y2="645.1" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="253.4" y="645.1" width="260" height="88.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="263.4" y="669.1" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">C_out：出力：桁上り C</text>
+<text x="263.4" y="687.1" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">HA1 か HA2 のサイフォン水（2u）を受け、</text>
+<text x="263.4" y="705.1" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">1u に揃える（余りは捨て溝へ）</text>
+<text x="263.4" y="723.1" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：水あり（1u）→ 1</text>
+<line x1="961.5" y1="715.1" x2="961.5" y2="665.1" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="814.1" y="715.1" width="260" height="52.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="824.1" y="739.1" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">S_out：出力：和 S</text>
+<text x="824.1" y="757.1" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：空 → 0</text>
+<line x1="795.5" y1="801.0" x2="736.5" y2="775.0" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="795.5" y="775.0" width="260" height="52.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="805.5" y="799.0" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">W：捨て溝の受け</text>
+<text x="805.5" y="817.0" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：水あり（1u）→ 1</text>
+<rect x="1100" y="140" width="364" height="150" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="1116.0" y="170.0" font-size="17" font-weight="bold" fill="#3a3226" text-anchor="start">図の状態：case a1b0c1 の後</text>
+<text x="1116.0" y="206.0" font-size="16" font-weight="normal" fill="#3a3226" text-anchor="start">入力：a=1　b=0　c=1</text>
+<text x="1116.0" y="240.0" font-size="20" font-weight="bold" fill="#2f7fc8" text-anchor="start">出力：桁上り C=1　和 S=0</text>
+<text x="1116.0" y="274.0" font-size="13" font-weight="normal" fill="#6a5e4c" text-anchor="start">水が残っている器＝1、空の器＝0</text>
+<rect x="1100" y="305" width="364" height="140" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="1116.0" y="331.0" font-size="15" font-weight="bold" fill="#3a3226" text-anchor="start">人の操作（判断なし・この順に）</text>
+<text x="1116.0" y="355.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">1. 段階1 入力：IA の栓を抜く／注ぐ</text>
+<text x="1116.0" y="375.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">2. 段階1 入力：IB の栓を抜く／注ぐ</text>
+<text x="1116.0" y="395.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">3. 段階1 入力：IC の栓を抜く／注ぐ</text>
+<text x="1116.0" y="415.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">4. 段階2：HA1 の栓を抜く／注ぐ</text>
+<text x="1116.0" y="435.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">5. 段階3：HA2 の栓を抜く／注ぐ</text>
+<rect x="1100" y="460" width="364" height="140" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="1116.0" y="486.0" font-size="15" font-weight="bold" fill="#3a3226" text-anchor="start">凡例</text>
+<rect x="1116" y="498" width="26" height="14" fill="#c98b5a" fill-opacity="0.4" stroke="#7a4a26"/>
+<text x="1152.0" y="510.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">土器の器</text>
+<rect x="1290" y="498" width="10" height="13" rx="2" fill="#8a5a2b"/>
+<text x="1310.0" y="510.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">木の栓</text>
+<rect x="1116" y="522" width="26" height="8" fill="#6b8f2a"/>
+<text x="1152.0" y="531.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">竹の管（サイフォン）</text>
+<line x1="1116" y1="550" x2="1142" y2="550" stroke="#c0392b" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="1152.0" y="555.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">しきい値の高さ</text>
+<line x1="1116" y1="576" x2="1142" y2="576" stroke="#2f7fc8" stroke-width="3" marker-end="url(#ah)"/>
+<text x="1152.0" y="581.0" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">水の流れ（緑の管＝サイフォン、茶の点線＝栓・注ぎ）</text>
+<rect x="1100" y="615" width="370" height="260" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="1114.0" y="637.0" font-size="15" font-weight="bold" fill="#3a3226" text-anchor="start">教訓桝の断面（模式）</text>
+<path d="M1130,645 L1130,795 L1280,795 L1280,645" fill="none" stroke="#7a4a26" stroke-width="3"/>
+<rect x="1132" y="709.5" width="146" height="83.5" fill="#3d8fd6" fill-opacity="0.55"/>
+<path d="M1199.0,825 L1199.0,705.0 M1211.0,825 L1211.0,705.0" stroke="#6b8f2a" stroke-width="4" fill="none"/>
+<path d="M1189.0,789 L1189.0,695.0 Q1205.0,681.0 1221.0,695.0 L1221.0,789" stroke="#6b8f2a" stroke-width="3" fill="none"/>
+<line x1="1130" y1="705.0" x2="1280" y2="705.0" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="5 4"/>
+<line x1="1205.0" y1="803" x2="1205.0" y2="829" stroke="#2f7fc8" stroke-width="3" marker-end="url(#ah)"/>
+<text x="1296.0" y="709.0" font-size="13" font-weight="bold" fill="#c0392b" text-anchor="start">しきい値 θ（1.5u）</text>
+<text x="1296.0" y="727.0" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">ここを超えると</text>
+<text x="1296.0" y="743.0" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">サイフォンが起動し</text>
+<text x="1296.0" y="759.0" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">中身が全部抜ける</text>
+<text x="1296.0" y="789.0" font-size="12" font-weight="normal" fill="#3f5a12" text-anchor="start">竹の内管＋かぶせ管</text>
+<text x="1296.0" y="805.0" font-size="12" font-weight="normal" fill="#3f5a12" text-anchor="start">（逆U字のサイフォン）</text>
+<text x="1296.0" y="835.0" font-size="12" font-weight="normal" fill="#2f7fc8" text-anchor="start">↓ サイフォン出口</text>
+<rect x="1270" y="773" width="16" height="12" rx="2" fill="#8a5a2b" stroke="#4a2e12"/>
+<text x="1130.0" y="857.0" font-size="12" font-weight="normal" fill="#8a5a2b" text-anchor="start">■ 栓（後の段階で抜く）</text>
+<text x="1480.0" y="897.0" font-size="12" font-weight="normal" fill="#6a5e4c" text-anchor="end">寸法は設計値（未試作）。❓の前提は YAML の assumptions を参照</text>
+</svg>
