@@ -1,0 +1,241 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" font-family="'Yu Gothic','Meiryo',sans-serif">
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2f7fc8"/>
+    </marker>
+    <marker id="arwg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7a6a55"/>
+    </marker>
+    <pattern id="hill" width="14" height="14" patternUnits="userSpaceOnUse">
+      <rect width="14" height="14" fill="#e6dcc4"/>
+      <circle cx="3" cy="4" r="1" fill="#cbbd9c"/><circle cx="10" cy="10" r="1" fill="#cbbd9c"/>
+    </pattern>
+    <pattern id="granite" width="18" height="18" patternUnits="userSpaceOnUse">
+      <rect width="18" height="18" fill="#a8a6a0"/>
+      <circle cx="4" cy="5" r="1.2" fill="#8e8c86"/><circle cx="13" cy="12" r="1" fill="#c4c2bc"/><circle cx="9" cy="2" r="0.8" fill="#7d7b75"/>
+    </pattern>
+  </defs>
+
+  <rect width="1600" height="1000" fill="#f7f2e7"/>
+
+  <!-- タイトル -->
+  <text x="40" y="58" font-size="34" font-weight="bold" fill="#3a3226">酒船石 流体計算装置 ― 復元イメージ（ラフ）</text>
+  <text x="40" y="92" font-size="17" fill="#5a5040">東西断面の模式図。花崗岩の石は現存。木・竹・銅管の部分は「失われた」と仮定した推定です。</text>
+
+  <!-- 凡例 -->
+  <g transform="translate(1180,30)">
+    <rect width="380" height="112" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+    <rect x="16" y="16" width="30" height="18" fill="url(#granite)" stroke="#555"/>
+    <text x="56" y="31" font-size="15" fill="#3a3226">現存（花崗岩・出土遺構）</text>
+    <rect x="16" y="46" width="30" height="18" fill="#f0dfc0" stroke="#8a5a2b" stroke-dasharray="4 3"/>
+    <text x="56" y="61" font-size="15" fill="#3a3226">推定（木・竹・銅管＝失われた部分）</text>
+    <line x1="16" y1="88" x2="46" y2="88" stroke="#2f7fc8" stroke-width="4" marker-end="url(#arw)"/>
+    <text x="56" y="93" font-size="15" fill="#3a3226">水の流れ（＝信号）</text>
+  </g>
+
+  <!-- 方位 -->
+  <g font-size="20" font-weight="bold" fill="#7a6a55">
+    <text x="470" y="150">東（高い）</text>
+    <text x="1040" y="150">西（低い）</text>
+    <line x1="580" y1="144" x2="1025" y2="144" stroke="#7a6a55" stroke-width="2" marker-end="url(#arwg)"/>
+  </g>
+
+  <!-- 丘（地面） 石と同じく東→西へ下る -->
+  <path d="M0,560 L470,600 L1130,664 L1600,700 L1600,1000 L0,1000 Z" fill="url(#hill)"/>
+  <path d="M0,560 L470,600 L1130,664 L1600,700" fill="none" stroke="#b7a782" stroke-width="2"/>
+
+  <!-- ===== 東：水源と漏刻式クロック ===== -->
+  <g>
+    <!-- 土管・石樋（出土） -->
+    <rect x="0" y="176" width="120" height="16" fill="url(#granite)" stroke="#555"/>
+    <line x1="10" y1="184" x2="112" y2="184" stroke="#2f7fc8" stroke-width="4" marker-end="url(#arw)"/>
+    <text x="10" y="150" font-size="14" fill="#3a3226">東40mの導水遺構（土管・石樋）※出土</text>
+
+    <!-- 木の櫓 -->
+    <g stroke="#8a5a2b" stroke-width="5" stroke-dasharray="10 4">
+      <line x1="100" y1="270" x2="100" y2="570"/>
+      <line x1="220" y1="360" x2="220" y2="578"/>
+      <line x1="300" y1="360" x2="300" y2="585"/>
+      <line x1="370" y1="450" x2="370" y2="590"/>
+    </g>
+
+    <!-- 3段タンク -->
+    <g fill="#f0dfc0" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="6 3">
+      <rect x="90" y="200" width="130" height="70"/>
+      <rect x="180" y="290" width="130" height="70"/>
+      <rect x="270" y="380" width="120" height="70"/>
+    </g>
+    <g fill="#8fc3ec" opacity="0.85">
+      <rect x="92" y="216" width="126" height="52"/>
+      <rect x="182" y="310" width="126" height="48"/>
+      <rect x="272" y="402" width="116" height="46"/>
+    </g>
+    <!-- U字銅管サイフォン -->
+    <g fill="none" stroke="#b8733a" stroke-width="5">
+      <path d="M190,262 L190,186 Q190,172 204,172 L238,172 Q252,172 252,186 L252,300"/>
+      <path d="M280,352 L280,276 Q280,262 294,262 L328,262 Q342,262 342,276 L342,392"/>
+    </g>
+    <text x="262" y="168" font-size="13" fill="#8a4f1c">U字銅管（サイフォン）</text>
+
+    <!-- 竹樋で A へ -->
+    <path d="M388,440 L522,470" stroke="#7a9a3a" stroke-width="9" stroke-linecap="round" stroke-dasharray="14 3"/>
+    <path d="M392,438 L512,465" stroke="#2f7fc8" stroke-width="3" marker-end="url(#arw)"/>
+
+    <g font-size="15" fill="#3a3226">
+      <rect x="20" y="470" width="250" height="78" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+      <text x="32" y="494" font-weight="bold">① 漏刻式タンク＝クロック</text>
+      <text x="32" y="516" font-size="13">一定の流量で水を送り出す</text>
+      <text x="32" y="536" font-size="13">（水落遺跡の漏刻と同じ仕組み）</text>
+    </g>
+  </g>
+
+  <!-- ===== 中央：酒船石（約5.5°傾斜） ===== -->
+  <g>
+    <!-- 本体：上面 (470,470)-(1130,534)、厚さ約1m -->
+    <path d="M470,470 L1130,534 L1130,654 L470,590 Z" fill="url(#granite)" stroke="#4a4a46" stroke-width="3"/>
+    <!-- 上面のくぼみ（断面） -->
+    <g fill="#3d8fd6" stroke="#2c2c2a" stroke-width="1.5">
+      <path d="M505,474 Q522,490 540,477 Z"/>
+      <path d="M592,482 Q612,494 632,486 Z" fill="#c9e2f5"/>
+      <path d="M668,489 Q686,503 704,492 Z"/>
+      <path d="M740,496 Q830,520 905,512 Z"/>
+      <path d="M945,516 Q960,530 976,519 Z"/>
+      <path d="M1000,521 Q1016,535 1032,524 Z"/>
+      <path d="M1052,526 Q1066,539 1080,529 Z"/>
+    </g>
+    <!-- 上面の溝の流れ -->
+    <path d="M530,468 L1135,528" stroke="#2f7fc8" stroke-width="3" stroke-dasharray="2 6" fill="none"/>
+    <!-- 吐水 -->
+    <path d="M1130,536 Q1160,540 1172,568" stroke="#2f7fc8" stroke-width="4" fill="none" marker-end="url(#arw)"/>
+
+    <!-- 傾斜表示 -->
+    <line x1="470" y1="620" x2="1130" y2="620" stroke="#7a6a55" stroke-dasharray="5 5" opacity="0"/>
+    <rect x="560" y="552" width="400" height="56" rx="6" fill="#f7f2e7" opacity="0.85"/>
+    <text x="760" y="576" font-size="22" font-weight="bold" fill="#3a3226" text-anchor="middle">酒船石（花崗岩）</text>
+    <text x="760" y="600" font-size="15" fill="#3a3226" text-anchor="middle">長さ約5.5m・幅約2.3m・厚さ約1m／東→西へ約5.5°下る</text>
+
+    <!-- ラベル（日経2014の呼称） -->
+    <g font-size="14" fill="#3a3226">
+      <line x1="522" y1="474" x2="510" y2="330" stroke="#7a6a55"/>
+      <text x="452" y="300" font-weight="bold">A：入力</text>
+      <text x="452" y="318" font-size="12">水を最初に注ぐ所</text>
+
+      <line x1="612" y1="486" x2="610" y2="380" stroke="#7a6a55"/>
+      <text x="560" y="350" font-weight="bold">B：通過点</text>
+      <text x="560" y="368" font-size="12">底が逆傾斜で水が溜まらない</text>
+
+      <line x1="686" y1="494" x2="720" y2="290" stroke="#7a6a55"/>
+      <text x="690" y="250" font-weight="bold">C → D1〜D6</text>
+      <text x="690" y="268" font-size="12">小さなくぼみ＝計量器</text>
+      <text x="690" y="284" font-size="12">（溢れで「1単位」を量る）</text>
+
+      <line x1="830" y1="510" x2="880" y2="380" stroke="#7a6a55"/>
+      <text x="830" y="342" font-weight="bold">中央の長楕円くぼみ</text>
+      <text x="830" y="360" font-size="12">集約・結果の表示</text>
+
+      <line x1="1130" y1="534" x2="1080" y2="430" stroke="#7a6a55"/>
+      <text x="1000" y="404" font-weight="bold">溝の先端：出力</text>
+      <text x="1000" y="422" font-size="12">溝の形＝プログラム</text>
+    </g>
+
+    <g font-size="15" fill="#3a3226">
+      <rect x="560" y="680" width="420" height="78" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+      <text x="574" y="704" font-weight="bold">② 酒船石＝配線と計量の層（回路基板）</text>
+      <text x="574" y="726" font-size="13">石そのものは動かない。溝で水を振り分け、くぼみで量を揃える。</text>
+      <text x="574" y="746" font-size="13">（溝の分岐を噴流のフリップフロップと見る説もある：村上ら2017）</text>
+    </g>
+  </g>
+
+  <!-- ===== 西：鹿威しカウンタ・甕レジスタ ===== -->
+  <g>
+    <!-- 支柱 -->
+    <g stroke="#8a5a2b" stroke-width="5" stroke-dasharray="10 4">
+      <line x1="1200" y1="600" x2="1200" y2="680"/>
+      <line x1="1265" y1="680" x2="1265" y2="690"/>
+      <line x1="1330" y1="760" x2="1330" y2="700"/>
+    </g>
+    <!-- 転倒升 3段 -->
+    <g fill="#f0dfc0" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="6 3">
+      <path d="M1170,570 L1228,580 L1224,604 L1166,594 Z"/>
+      <path d="M1228,640 L1300,652 L1296,682 L1224,670 Z"/>
+      <path d="M1290,710 L1376,724 L1372,760 L1286,746 Z"/>
+    </g>
+    <g fill="#8fc3ec">
+      <path d="M1169,586 L1225,595 L1224,604 L1166,594 Z"/>
+      <path d="M1226,664 L1297,676 L1296,682 L1224,670 Z"/>
+    </g>
+    <g fill="#5a4630"><circle cx="1200" cy="590" r="4"/><circle cx="1262" cy="660" r="4"/><circle cx="1332" cy="734" r="4"/></g>
+    <path d="M1228,592 Q1244,604 1246,636" stroke="#2f7fc8" stroke-width="3" fill="none" marker-end="url(#arw)"/>
+    <path d="M1300,668 Q1316,680 1318,704" stroke="#2f7fc8" stroke-width="3" fill="none" marker-end="url(#arw)"/>
+    <g font-size="12" fill="#3a3226">
+      <text x="1236" y="572">升0 容量2 → bit0</text>
+      <text x="1308" y="644">升1 容量4 → bit1</text>
+      <text x="1384" y="716">升2 容量8 → bit2</text>
+    </g>
+    <path d="M1376,744 Q1400,760 1410,800" stroke="#2f7fc8" stroke-width="3" fill="none" marker-end="url(#arw)"/>
+
+    <!-- 甕レジスタ -->
+    <g fill="#f0dfc0" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="6 3">
+      <path d="M1390,810 Q1380,880 1420,900 L1470,900 Q1510,880 1500,810 Z"/>
+      <path d="M1500,820 Q1495,880 1520,898 L1560,898 Q1590,880 1585,820 Z"/>
+    </g>
+    <path d="M1392,840 Q1386,884 1420,898 L1470,898 Q1504,884 1498,840 Z" fill="#8fc3ec"/>
+    <rect x="1436" y="830" width="18" height="10" fill="#d8b46a" stroke="#5a4630"/>
+    <line x1="1445" y1="830" x2="1445" y2="790" stroke="#5a4630" stroke-width="2"/>
+    <g font-size="13" fill="#3a3226">
+      <text x="1418" y="924">甕 R1</text><text x="1522" y="924">甕 R2</text>
+      <text x="1452" y="786">浮き</text>
+    </g>
+
+    <g font-size="15" fill="#3a3226">
+      <rect x="1170" y="380" width="410" height="122" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+      <text x="1184" y="404" font-weight="bold">③ 鹿威し（転倒升）の段＝2進カウンタ</text>
+      <text x="1184" y="424" font-size="13">満杯で傾いて空になる＝「余り」と「桁上り」を作る。</text>
+      <text x="1184" y="442" font-size="13">容量2・4・8の升を下へ連ねると繰り上がりが伝わる。</text>
+      <text x="1184" y="468" font-weight="bold">④ 甕＝レジスタ（記憶）</text>
+      <text x="1184" y="488" font-size="13">水量がそのまま数。浮きで「0か否か」を判定し分岐する。</text>
+    </g>
+
+    <!-- 亀形石造物へ -->
+    <path d="M1460,930 L1460,948" stroke="#2f7fc8" stroke-width="3" marker-end="url(#arw)"/>
+    <text x="1330" y="962" font-size="13" fill="#3a3226">→ 丘の麓の亀形石造物へ（次の段・出力）</text>
+  </g>
+
+  <!-- ===== 戻り路（ループ） ===== -->
+  <path d="M1390,880 C1200,972 700,968 470,960 C300,955 26,940 22,700 L22,240 Q22,212 88,214"
+        fill="none" stroke="#2f7fc8" stroke-width="3" stroke-dasharray="9 7" marker-end="url(#arw)"/>
+  <text x="540" y="992" font-size="15" fill="#2a5f96" font-weight="bold">⑤ 戻り路（汲み上げ）＝ループ。人が栓を開け閉めし、水を汲み上げる手順が「プログラム」</text>
+
+  <!-- ===== 上面図（模式） ===== -->
+  <g transform="translate(60,640)">
+    <rect width="440" height="270" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+    <text x="16" y="28" font-size="16" font-weight="bold" fill="#3a3226">上から見た図（模式・実測図ではない）</text>
+    <!-- 石の平面：北・南の縁が割られて欠けている -->
+    <path d="M40,90 L120,86 L132,74 L150,88 L250,84 L262,72 L280,86 L400,92
+             L404,200 L300,204 L288,216 L270,202 L170,206 L156,218 L140,204 L36,198 Z"
+          fill="url(#granite)" stroke="#4a4a46" stroke-width="2"/>
+    <!-- くぼみと溝 -->
+    <g fill="#8fc3ec" stroke="#2c2c2a" stroke-width="1.2">
+      <circle cx="70" cy="145" r="13"/>
+      <ellipse cx="120" cy="145" rx="14" ry="10" fill="#c9e2f5"/>
+      <circle cx="165" cy="145" r="11"/>
+      <ellipse cx="250" cy="145" rx="56" ry="24"/>
+      <circle cx="200" cy="105" r="9"/><circle cx="200" cy="185" r="9"/>
+      <circle cx="320" cy="108" r="9"/><circle cx="320" cy="182" r="9"/>
+      <circle cx="355" cy="120" r="8"/><circle cx="355" cy="170" r="8"/>
+    </g>
+    <g stroke="#2f7fc8" stroke-width="2.5" fill="none">
+      <path d="M83,145 L106,145"/><path d="M134,145 L154,145"/><path d="M176,145 L194,145"/>
+      <path d="M176,140 L196,112"/><path d="M176,150 L196,178"/>
+      <path d="M306,145 L398,145"/>
+      <path d="M290,130 L314,112"/><path d="M290,160 L314,178"/>
+      <path d="M326,112 L349,120"/><path d="M326,178 L349,170"/>
+    </g>
+    <g font-size="12" fill="#3a3226">
+      <text x="40" y="236">東（A側・高い）</text>
+      <text x="300" y="236">西（出力側・低い）</text>
+      <text x="16" y="258" font-size="11">ぎざぎざの縁＝北・南が楔で割られた跡（後世に石材として転用）</text>
+      <text x="300" y="70">北</text><text x="300" y="232" opacity="0">南</text>
+    </g>
+  </g>
+</svg>
