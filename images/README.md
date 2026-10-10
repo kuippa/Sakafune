@@ -5,6 +5,7 @@
 | ファイル | 作成者 | 作成日 | 種類 | 内容・注意 |
 |---|---|---|---|---|
 | [sakafune_concept-rough_20261010_claude-opus-5-5.png](sakafune_concept-rough_20261010_claude-opus-5-5.png)<br>（元データ [.svg](sakafune_concept-rough_20261010_claude-opus-5-5.svg)） | Claude Opus 5.5（`claude-opus-5-5`） | 2026-10-10 | 模式図 | 東西断面の復元イメージ（路線B）。左下の上面図は模式で、実測図ではない |
+| [level1-counter_iso_20261010_claude-opus-5-5.png](level1-counter_iso_20261010_claude-opus-5-5.png)<br>（元データ [.svg](level1-counter_iso_20261010_claude-opus-5-5.svg)） | Claude Opus 5.5（`claude-opus-5-5`） | 2026-10-10 | 模式図（**自動生成**） | 設計01 レベル1「教訓桝カウンタ」の3D斜め見下ろし図。[design/models/level1_counter.yaml](../design/models/level1_counter.yaml) から `tools/render_iso.py` で生成（5回注いだ後の状態）。手で直さず、YAMLを直して作り直す |
 | [sakafune_concept-reference_20261010_gemini-3-auto.jpg](sakafune_concept-reference_20261010_gemini-3-auto.jpg) | Gemini 3 系（自動選択。具体的なモデル名は不明） | 2026-10-10 | 参考画像 | 雰囲気をつかむための参考。**事実と合わない点がある**（下記） |
 
 ## Gemini参考画像の注意点
