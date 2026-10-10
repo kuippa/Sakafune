@@ -21,7 +21,7 @@
 | [HANDOFF.md](HANDOFF.md) | 最新の引き継ぎ（プロジェクトの現在地） |
 | [handoff/](handoff/) | 引き継ぎの過去の版（節目ごとのスナップショット） |
 | [references/](references/README.md) | 分野別の文献リスト |
-| [design/](design/) | 設計（設計01：教訓桝による最小の計算装置） |
+| [design/](design/) | 設計（設計01：教訓桝による最小の計算装置、設計02：栓を抜かずに XOR を作る） |
 | [images/](images/README.md) | 図・画像（作成者・作成AIの一覧つき） |
 
 ## 発想

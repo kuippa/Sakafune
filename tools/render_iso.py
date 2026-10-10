@@ -70,6 +70,15 @@ class Sim:
                     self.vol[p["siphon_to"]] += v
                     self.vol[pid] = 0.0
                     changed = True
+                elif p["type"] == "holed_cup" and v > p["hole_mL"] + 1e-9:
+                    self.vol[p["hole_to"]] += v - p["hole_mL"]
+                    self.vol[pid] = p["hole_mL"]
+                    changed = True
+                elif p["type"] == "splitter" and v > 1e-9:
+                    for t in p["split_to"]:
+                        self.vol[t] += v / len(p["split_to"])
+                    self.vol[pid] = 0.0
+                    changed = True
                 elif p["type"] == "metering_cup" and v > p["volume_mL"] + 1e-9:
                     extra = v - p["volume_mL"]
                     self.vol[pid] = p["volume_mL"]
@@ -129,8 +138,10 @@ def raw_point(x, y, z):
 
 
 def part_height(part):
-    if part["type"] in ("siphon_cup", "basin"):
+    if part["type"] in ("siphon_cup", "basin", "holed_cup"):
         return height_cm(part, part["capacity_mL"])
+    if part["type"] == "splitter":
+        return 3
     if part["type"] == "metering_cup":
         return height_cm(part, part["volume_mL"]) * 1.15
     return 5
@@ -209,6 +220,11 @@ def draw_vessel(iso, part, water_ml):
         _, lt = iso.p(x, y, z + th)
         out.append(f'<ellipse cx="{cx:.1f}" cy="{lt:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="none" '
                    f'stroke="{COL["thr"]}" stroke-width="1.4" stroke-dasharray="5 4"/>')
+    if part["type"] == "holed_cup":
+        hh = height_cm(part, part["hole_mL"])
+        _, lt = iso.p(x, y, z + hh)
+        out.append(f'<ellipse cx="{cx:.1f}" cy="{lt:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="none" '
+                   f'stroke="{COL["thr"]}" stroke-width="1.4" stroke-dasharray="5 4"/>')
     if part["type"] == "metering_cup" and part.get("overflow_to"):
         # 溢れ口（縁の切り欠き）
         out.append(f'<rect x="{cx + rx - 5:.1f}" y="{top - 2:.1f}" width="10" height="6" '
@@ -218,11 +234,18 @@ def draw_vessel(iso, part, water_ml):
                f'stroke="{COL["wall_edge"]}" stroke-width="2"/>')
     out.append(f'<ellipse cx="{cx:.1f}" cy="{top:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="none" '
                f'stroke="{COL["wall_edge"]}" stroke-width="2"/>')
+    if part["type"] == "holed_cup":
+        # 側面の穴（右手前、穴の高さ）
+        _, lt = iso.p(x, y, z + height_cm(part, part["hole_mL"]))
+        out.append(f'<ellipse cx="{cx + rx * 0.8:.1f}" cy="{lt + ry * 0.6:.1f}" rx="4.5" ry="5.5" '
+                   f'fill="#2b1a0c" stroke="{COL["thr"]}" stroke-width="1"/>')
     if part["type"] == "siphon_cup" and part.get("drain_to"):
         # 栓（手前の壁の下のほう）
         px, py = cx + rx * 0.55, bot + ry * 0.55
         out.append(f'<rect x="{px - 5:.1f}" y="{py - 9:.1f}" width="10" height="12" rx="2" '
                    f'fill="{COL["plug"]}" stroke="#4a2e12"/>')
+    if part.get("tag"):
+        out.append(text(cx, bot + ry + 18, part["tag"], 14, "bold", anchor="middle"))
     return out, {"cx": cx, "top": top, "rx": rx, "ry": ry, "bot": bot}
 
 
@@ -235,8 +258,13 @@ def arrow_defs():
 </defs>"""
 
 
-def callout(px, py, bx, by, lines, width=260):
+def text_width(t, size):
+    return sum(size * (0.55 if ord(c) < 128 else 1.0) for c in t)
+
+
+def callout(px, py, bx, by, lines, width=None):
     """(px,py) を指す矢印つきの注釈の箱。lines=[(text, size, weight)]"""
+    width = width or max(text_width(t, sz) for t, sz, _ in lines) + 22
     lh = [l[1] + 6 for l in lines]
     h = sum(lh) + 14
     # 箱の辺のうち、指す点に近い側から線を出す
@@ -244,7 +272,7 @@ def callout(px, py, bx, by, lines, width=260):
     sy = by + h if py > by + h else (by if py < by else by + h / 2)
     out = [f'<line x1="{sx:.1f}" y1="{sy:.1f}" x2="{px:.1f}" y2="{py:.1f}" '
            f'stroke="{COL["sub"]}" stroke-width="1.3" marker-end="url(#ahk)"/>',
-           f'<rect x="{bx:.1f}" y="{by:.1f}" width="{width}" height="{h:.1f}" rx="6" '
+           f'<rect x="{bx:.1f}" y="{by:.1f}" width="{width:.0f}" height="{h:.1f}" rx="6" '
            f'fill="{COL["panel"]}" stroke="{COL["panel_edge"]}"/>']
     yy = by + 8
     for (t, size, weight), d in zip(lines, lh):
@@ -258,8 +286,13 @@ def callout_lines(part, vol_ml, u, inputs):
     if part["type"] == "siphon_cup":
         lines.append((f"しきい値 θ = {part['threshold_mL'] / u:g}u（{part['threshold_mL']}mL）"
                       f"／容量 {part['capacity_mL']}mL", 12, "normal"))
+    if part["type"] == "holed_cup":
+        lines.append((f"穴の高さ = {part['hole_mL'] / u:g}u（{part['hole_mL']}mL）"
+                      f"／容量 {part['capacity_mL']}mL", 12, "normal"))
     for n in part.get("notes", []):
         lines.append((n, 12, "normal"))
+    if part["type"] == "splitter":
+        return lines
     if part["id"] in inputs:
         v = int(bool(inputs[part["id"]]))
         lines.append((f"入力値：{v}（{'1u 満たして注いだ' if v else '空のまま'}）", 12, "bold"))
@@ -355,7 +388,7 @@ def legend(x, y):
             text(x + 52, y + 71, "竹の管（サイフォン）", 13),
             f'<line x1="{x + 16}" y1="{y + 90}" x2="{x + 42}" y2="{y + 90}" stroke="{COL["thr"]}" '
             f'stroke-width="2" stroke-dasharray="5 4"/>',
-            text(x + 52, y + 95, "しきい値の高さ", 13),
+            text(x + 52, y + 95, "しきい値・穴の高さ", 13),
             f'<line x1="{x + 16}" y1="{y + 116}" x2="{x + 42}" y2="{y + 116}" stroke="{COL["flow"]}" '
             f'stroke-width="3" marker-end="url(#ah)"/>',
             text(x + 52, y + 121, "水の流れ（緑の管＝サイフォン、茶の点線＝栓・注ぎ）", 12)]
@@ -368,9 +401,11 @@ def connections(model):
     """parts の siphon_to / drain_to / overflow_to から、流れの一覧を作る。"""
     out = []
     for p in model["parts"]:
-        for key in ("siphon_to", "drain_to", "overflow_to"):
+        for key in ("siphon_to", "drain_to", "overflow_to", "hole_to"):
             if p.get(key):
                 out.append((p, key, p[key]))
+        for t in p.get("split_to", []):
+            out.append((p, "split_to", t))
     return out
 
 
@@ -379,7 +414,8 @@ def render(model, case, W=1500, H=None):
     H = H or max(860, 475 + 40 + 20 * len(model["procedure"]) + 300)
     u = model["units"]["u_mL"]
     vol = run_case(model, case)
-    iso = fit(model, (300, 190, 1060, H - 80))
+    box = model.get("layout", {}).get("fit_box", [300, 190, 1060, H - 80])
+    iso = fit(model, tuple(box[:3]) + (box[3] if box[3] > 0 else H + box[3],))
 
     m = model["meta"]
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" '
@@ -421,6 +457,17 @@ def render(model, case, W=1500, H=None):
                 d = f"M{sx:.1f},{sy:.1f} Q{sx + 10:.1f},{ey:.1f} {ex:.1f},{ey:.1f}"
             svg.append(f'<path d="{d}" fill="none" stroke="{COL["plug"]}" stroke-width="2.5" '
                        f'stroke-dasharray="7 5" marker-end="url(#ah)"/>')
+        elif kind == "hole_to":
+            _, ly = iso.p(ax, ay, az + height_cm(a, a["hole_mL"]))
+            sx, sy = g["cx"] + g["rx"] * 0.8, ly + g["ry"] * 0.6
+            d = f"M{sx:.1f},{sy:.1f} Q{sx + 25:.1f},{sy:.1f} {ex:.1f},{ey:.1f}"
+            svg.append(f'<path d="{d}" fill="none" stroke="{COL["flow"]}" stroke-width="3" '
+                       f'marker-end="url(#ah)"/>')
+        elif kind == "split_to":
+            sx, sy = g["cx"], g["bot"]
+            d = f"M{sx:.1f},{sy:.1f} Q{sx:.1f},{ey - 20:.1f} {ex:.1f},{ey:.1f}"
+            svg.append(f'<path d="{d}" fill="none" stroke="{COL["flow"]}" stroke-width="2" '
+                       f'stroke-dasharray="4 3" stroke-opacity="0.8" marker-end="url(#ah)"/>')
         else:  # overflow_to
             sx, sy = g["cx"] + g["rx"], g["top"]
             d = f"M{sx:.1f},{sy:.1f} Q{sx + 20:.1f},{ey:.1f} {ex:.1f},{ey:.1f}"
@@ -429,6 +476,8 @@ def render(model, case, W=1500, H=None):
 
     # 注釈
     for p in model["parts"]:
+        if p.get("hide_callout"):
+            continue
         g = geo[p["id"]]
         dx, dy = p.get("callout", [-290, 6])
         ax, ay = g["cx"] - g["rx"], g["bot"]

@@ -20,11 +20,17 @@ assumptions: # 前提と未確認事項（✅💭❓）
 |---|---|---|
 | `metering_cup` | 計量の器。`volume_mL` を超えた分は `overflow_to` へ溢れる | `volume_mL`, `overflow_to`（省略可）, `drain_to`（栓／注ぎ口の行き先） |
 | `siphon_cup` | 教訓桝。中身が `threshold_mL` 以上になると、全部が `siphon_to` へ抜ける | `threshold_mL`, `capacity_mL`, `siphon_to`, `siphon_tube_inner_diameter_mm`, `drain_to`（栓の行き先、省略可） |
+| `holed_cup` | 穴あき桝。中身が `hole_mL` を超えた分だけ、側面の穴から `hole_to` へ出る | `hole_mL`, `capacity_mL`, `hole_to` |
+| `splitter` | 分水口。来た水を `split_to` の行き先へ等分する | `split_to`（リスト） |
 | `basin` | 受けの器。ためるだけ | `capacity_mL` |
 
 共通の省略可能な項目：
 - `notes`：図の注釈に足す文（リスト）
 - `callout: [dx, dy]`：図の注釈の箱の位置（器の左下からのずれ、ピクセル）。見た目の調整用で、物理的な意味はない
+- `hide_callout: true`：注釈の箱を出さない
+- `tag`：器の真下に書く短い名前
+
+図全体の調整として、`layout.fit_box: [x0, y0, x1, y1]`（装置を収める範囲、ピクセル。y1 が負なら下端からの距離）も書けます。
 
 ## 操作（procedure）
 人の操作を順に並べます。**中身を見て操作を変えることはしません**（判断なし）。

@@ -1,0 +1,112 @@
+# レベル2b：穴あき桝だけで作る XOR（2本の溝で1ビットを表す方式）のモデル定義
+# このファイルが正本。書き方は SCHEMA.md を参照。
+# 状態の記号：✅確認済み / 💭推論・設計値 / ❓要確認（試作・調査で確かめる）
+#
+# 考え方（design/02_holed-cup.md）：
+#   穴あき桝（側面の高さ θ に穴）は、入った量 n のうち
+#     溜まる量 ＝ min(n, θ)、穴から出る量 ＝ n − θ（0 未満なら 0）
+#   どちらも「入れる水を増やすと増える（減らない）」ので、1本の溝で1ビットを表す限り、
+#   穴だけでは XOR（1つなら出て、2つなら出ない）は作れない。
+#   そこで1ビットを「1の溝」と「0の溝」の2本で表す（必ずどちらか一方に水が来る）。
+#     XOR が 1 ＝ (a=1 かつ b=0) または (a=0 かつ b=1)
+#     XOR が 0 ＝ (a=1 かつ b=1) または (a=0 かつ b=0)
+#   「かつ」は穴あき桝1つ（2つ来たときだけ穴から出る）、「または」は溝の合流で作れる。
+#   栓を抜く作業も、時間合わせも要らない。入力を注げば、答えの溝に水が流れ出る。
+
+meta:
+  id: level2b_xor_holes_dualrail
+  title: 穴あき桝だけの XOR（2本の溝で1ビット）
+  design_doc: ../02_holed-cup.md
+  author: claude-opus-5-5
+  created: 2026-10-10
+  status: 💭 設計値（未試作）
+  caption: 1ビットを「1の溝」「0の溝」の2本で表す。穴あき桝4つと合流だけで XOR を作る。栓を抜く作業なし。
+
+layout:
+  fit_box: [230, 170, 960, -60]   # 図の中で装置を収める範囲（ピクセル）。見た目の調整用
+
+units:
+  length: cm
+  volume: mL
+  u_mL: 100
+
+parts:
+  # ---- 入力：a, b それぞれ「1の器」「0の器」のどちらか一方だけを満たす（2u） ----
+  - {id: A1, type: metering_cup, name: "a の1の器", volume_mL: 200, inner_diameter_cm: 7,
+     position: [-34, 34, 96], drain_to: SA1, callout: [-200, -40], tag: "a1"}
+  - {id: A0, type: metering_cup, name: "a の0の器", volume_mL: 200, inner_diameter_cm: 7,
+     position: [-12, 12, 96], drain_to: SA0, hide_callout: true, tag: "a0"}
+  - {id: B1, type: metering_cup, name: "b の1の器", volume_mL: 200, inner_diameter_cm: 7,
+     position: [12, -12, 96], drain_to: SB1, hide_callout: true, tag: "b1"}
+  - {id: B0, type: metering_cup, name: "b の0の器", volume_mL: 200, inner_diameter_cm: 7,
+     position: [34, -34, 96], drain_to: SB0, hide_callout: true, tag: "b0"}
+
+  # ---- 分水口：2u を半分ずつ、2つの桝へ ----
+  - {id: SA1, type: splitter, name: 分水口（a1を配る）, inner_diameter_cm: 4, position: [-34, 34, 80],
+     split_to: [K11, K10], callout: [-262, -42],
+     notes: [a1 の水は、2つの桝の両方で, b を待つ必要がある, （a1かつb1 と a1かつb0）, 水は分けると減るので、, 最初に 2u 注いで、, 仕切りで 1u ずつ2本に分ける, （円筒分水などが使える）]}
+  - {id: SA0, type: splitter, name: 分水口, inner_diameter_cm: 4, position: [-12, 12, 80],
+     split_to: [K01, K00], hide_callout: true}
+  - {id: SB1, type: splitter, name: 分水口, inner_diameter_cm: 4, position: [12, -12, 80],
+     split_to: [K11, K01], hide_callout: true}
+  - {id: SB0, type: splitter, name: 分水口, inner_diameter_cm: 4, position: [34, -34, 80],
+     split_to: [K10, K00], hide_callout: true}
+
+  # ---- 穴あき桝：2本来たときだけ穴から出る（「かつ」） ----
+  - {id: K11, type: holed_cup, name: "穴あき桝（a1 かつ b1）", inner_diameter_cm: 7,
+     hole_mL: 150, capacity_mL: 250, position: [-36, 36, 50], hole_to: X0, callout: [-215, 40], tag: "a1かつb1",
+     notes: [穴の高さ 1.5u。2u 来たら 0.5u が出る]}
+  - {id: K10, type: holed_cup, name: "穴あき桝（a1 かつ b0）", inner_diameter_cm: 7,
+     hole_mL: 150, capacity_mL: 250, position: [-12, 12, 50], hole_to: X1, hide_callout: true, tag: "a1かつb0"}
+  - {id: K01, type: holed_cup, name: "穴あき桝（a0 かつ b1）", inner_diameter_cm: 7,
+     hole_mL: 150, capacity_mL: 250, position: [12, -12, 50], hole_to: X1, hide_callout: true, tag: "a0かつb1"}
+  - {id: K00, type: holed_cup, name: "穴あき桝（a0 かつ b0）", inner_diameter_cm: 7,
+     hole_mL: 150, capacity_mL: 250, position: [36, -36, 50], hole_to: X0, hide_callout: true, tag: "a0かつb0"}
+
+  # ---- 出力：合流して受ける（「または」） ----
+  - {id: X1, type: basin, name: "出力：XOR の1の溝", inner_diameter_cm: 9, capacity_mL: 200,
+     position: [-14, 14, -6], callout: [-260, 0], tag: "1の溝"}
+  - {id: X0, type: basin, name: "出力：XOR の0の溝", inner_diameter_cm: 9, capacity_mL: 200,
+     position: [16, -16, -6], callout: [80, 0], tag: "0の溝"}
+
+procedure:
+  - {phase: 入力, release: A1}
+  - {phase: 入力, release: A0}
+  - {phase: 入力, release: B1}
+  - {phase: 入力, release: B0}
+
+# inputs：満たしておく器（a=1 なら A1、a=0 なら A0）
+cases:
+  - {id: a0b0, inputs: {A0: 1, B0: 1}, expect: {X1: 0, X0: 1}}
+  - {id: a1b0, inputs: {A1: 1, B0: 1}, expect: {X1: 1, X0: 0}}
+  - {id: a0b1, inputs: {A0: 1, B1: 1}, expect: {X1: 1, X0: 0}}
+  - {id: a1b1, inputs: {A1: 1, B1: 1}, expect: {X1: 0, X0: 1}}
+
+readout:
+  kind: named
+  inputs:
+    - {id: A1, label: a1}
+    - {id: A0, label: a0}
+    - {id: B1, label: b1}
+    - {id: B0, label: b0}
+  items:
+    - {id: X1, label: 1の溝}
+    - {id: X0, label: 0の溝}
+  default_case: a1b1
+
+reset:
+  - 穴あき桝に溜まった水（使い終わった水）と出力の器を空にする
+
+assumptions:
+  - id: H1
+    text: 側面の穴は、穴の高さを超えた分だけを出し、それより下の水は漏らさない
+    status: ❓
+  - id: H2
+    text: 分水口は 2u をほぼ正確に半分ずつに分ける（ずれは穴の余裕 ±0.5u に収める）。円筒分水のように、縁から均等に溢れさせる方式なら、注ぐ勢いが多少ばらついても割合が変わりにくい
+    status: ❓
+  - id: H3
+    text: 出力は 0.5u（入力の半分）になる。穴を 1.5u にすると誤差に強いが、出力が小さくなる。次の段につなぐには、量を戻す仕組み（下駄を履かせた教訓桝、または人が新しい水を注ぐ）が要る
+    status: 💭
+  - id: H4
+    text: 使わなかった水（1u）が穴あき桝に溜まったまま残るので、計算のたびに空にする
+    status: 💭

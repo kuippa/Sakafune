@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 895" width="1500" height="895" font-family="'Yu Gothic','Meiryo','Hiragino Sans','Noto Sans CJK JP',sans-serif">
+<defs>
+  <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#2f7fc8"/></marker>
+  <marker id="ahk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#6a5e4c"/></marker>
+</defs>
+<rect width="1500" height="895" fill="#f7f2e7"/>
+<text x="36.0" y="52.0" font-size="30" font-weight="bold" fill="#3a3226" text-anchor="start">穴あき桝だけの XOR（2本の溝で1ビット） ― 3D斜め見下ろし模式図</text>
+<text x="36.0" y="84.0" font-size="15" font-weight="normal" fill="#6a5e4c" text-anchor="start">モデル定義：design/models/level2b_xor_holes_dualrail.yaml から自動生成。作成：claude-opus-5-5（2026-10-10）。状態：💭 設計値（未試作）</text>
+<text x="36.0" y="108.0" font-size="15" font-weight="normal" fill="#6a5e4c" text-anchor="start">1ビットを「1の溝」「0の溝」の2本で表す。穴あき桝4つと合流だけで XOR を作る。栓を抜く作業なし。</text>
+<path d="M261.5,209.6 L261.5,241.1 A22.6,13.1 0 0 0 306.8,241.1 L306.8,209.6 A22.6,13.1 0 0 1 261.5,209.6 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="284.1" cy="209.6" rx="22.6" ry="13.1" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M261.5,209.6 L261.5,241.1 A22.6,13.1 0 0 0 306.8,241.1 L306.8,209.6 A22.6,13.1 0 0 1 261.5,209.6 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="284.1" cy="209.6" rx="22.6" ry="13.1" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="284.1" y="272.2" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">a1</text>
+<path d="M462.7,209.6 L462.7,241.1 A22.6,13.1 0 0 0 507.9,241.1 L507.9,209.6 A22.6,13.1 0 0 1 462.7,209.6 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="485.3" cy="209.6" rx="22.6" ry="13.1" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M462.7,209.6 L462.7,241.1 A22.6,13.1 0 0 0 507.9,241.1 L507.9,209.6 A22.6,13.1 0 0 1 462.7,209.6 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="485.3" cy="209.6" rx="22.6" ry="13.1" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="485.3" y="272.2" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">a0</text>
+<path d="M682.1,209.6 L682.1,241.1 A22.6,13.1 0 0 0 727.3,241.1 L727.3,209.6 A22.6,13.1 0 0 1 682.1,209.6 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="704.7" cy="209.6" rx="22.6" ry="13.1" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M682.1,209.6 L682.1,241.1 A22.6,13.1 0 0 0 727.3,241.1 L727.3,209.6 A22.6,13.1 0 0 1 682.1,209.6 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="704.7" cy="209.6" rx="22.6" ry="13.1" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="704.7" y="272.2" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">b1</text>
+<path d="M883.2,209.6 L883.2,241.1 A22.6,13.1 0 0 0 928.5,241.1 L928.5,209.6 A22.6,13.1 0 0 1 883.2,209.6 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="905.9" cy="209.6" rx="22.6" ry="13.1" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M883.2,209.6 L883.2,241.1 A22.6,13.1 0 0 0 928.5,241.1 L928.5,209.6 A22.6,13.1 0 0 1 883.2,209.6 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="905.9" cy="209.6" rx="22.6" ry="13.1" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="905.9" y="272.2" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">b0</text>
+<path d="M271.2,309.8 L271.2,325.6 A12.9,7.5 0 0 0 297.1,325.6 L297.1,309.8 A12.9,7.5 0 0 1 271.2,309.8 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="284.1" cy="309.8" rx="12.9" ry="7.5" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M271.2,309.8 L271.2,325.6 A12.9,7.5 0 0 0 297.1,325.6 L297.1,309.8 A12.9,7.5 0 0 1 271.2,309.8 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="284.1" cy="309.8" rx="12.9" ry="7.5" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<path d="M472.4,309.8 L472.4,325.6 A12.9,7.5 0 0 0 498.2,325.6 L498.2,309.8 A12.9,7.5 0 0 1 472.4,309.8 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="485.3" cy="309.8" rx="12.9" ry="7.5" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M472.4,309.8 L472.4,325.6 A12.9,7.5 0 0 0 498.2,325.6 L498.2,309.8 A12.9,7.5 0 0 1 472.4,309.8 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="485.3" cy="309.8" rx="12.9" ry="7.5" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<path d="M691.8,309.8 L691.8,325.6 A12.9,7.5 0 0 0 717.6,325.6 L717.6,309.8 A12.9,7.5 0 0 1 691.8,309.8 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="704.7" cy="309.8" rx="12.9" ry="7.5" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M691.8,309.8 L691.8,325.6 A12.9,7.5 0 0 0 717.6,325.6 L717.6,309.8 A12.9,7.5 0 0 1 691.8,309.8 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="704.7" cy="309.8" rx="12.9" ry="7.5" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<path d="M892.9,309.8 L892.9,325.6 A12.9,7.5 0 0 0 918.8,325.6 L918.8,309.8 A12.9,7.5 0 0 1 892.9,309.8 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="905.9" cy="309.8" rx="12.9" ry="7.5" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M892.9,309.8 L892.9,325.6 A12.9,7.5 0 0 0 918.8,325.6 L918.8,309.8 A12.9,7.5 0 0 1 892.9,309.8 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="905.9" cy="309.8" rx="12.9" ry="7.5" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<path d="M243.2,449.7 L243.2,484.0 A22.6,13.1 0 0 0 288.5,484.0 L288.5,449.7 A22.6,13.1 0 0 1 243.2,449.7 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="265.8" cy="449.7" rx="22.6" ry="13.1" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M243.9,463.4 L243.9,484.0 A21.9,12.7 0 0 0 287.8,484.0 L287.8,463.4 A21.9,12.7 0 0 1 243.9,463.4 Z" fill="#3d8fd6" fill-opacity="0.75"/>
+<ellipse cx="265.8" cy="463.4" rx="21.9" ry="12.7" fill="#8fc3ec"/>
+<ellipse cx="265.8" cy="463.4" rx="22.6" ry="13.1" fill="none" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="5 4"/>
+<path d="M243.2,449.7 L243.2,484.0 A22.6,13.1 0 0 0 288.5,484.0 L288.5,449.7 A22.6,13.1 0 0 1 243.2,449.7 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="265.8" cy="449.7" rx="22.6" ry="13.1" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="284.0" cy="471.2" rx="4.5" ry="5.5" fill="#2b1a0c" stroke="#c0392b" stroke-width="1"/>
+<text x="265.8" y="515.0" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">a1かつb1</text>
+<path d="M462.7,449.7 L462.7,484.0 A22.6,13.1 0 0 0 507.9,484.0 L507.9,449.7 A22.6,13.1 0 0 1 462.7,449.7 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="485.3" cy="449.7" rx="22.6" ry="13.1" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M463.3,470.2 L463.3,484.0 A21.9,12.7 0 0 0 507.2,484.0 L507.2,470.2 A21.9,12.7 0 0 1 463.3,470.2 Z" fill="#3d8fd6" fill-opacity="0.75"/>
+<ellipse cx="485.3" cy="470.2" rx="21.9" ry="12.7" fill="#8fc3ec"/>
+<ellipse cx="485.3" cy="463.4" rx="22.6" ry="13.1" fill="none" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="5 4"/>
+<path d="M462.7,449.7 L462.7,484.0 A22.6,13.1 0 0 0 507.9,484.0 L507.9,449.7 A22.6,13.1 0 0 1 462.7,449.7 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="485.3" cy="449.7" rx="22.6" ry="13.1" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="503.4" cy="471.2" rx="4.5" ry="5.5" fill="#2b1a0c" stroke="#c0392b" stroke-width="1"/>
+<text x="485.3" y="515.0" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">a1かつb0</text>
+<path d="M682.1,449.7 L682.1,484.0 A22.6,13.1 0 0 0 727.3,484.0 L727.3,449.7 A22.6,13.1 0 0 1 682.1,449.7 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="704.7" cy="449.7" rx="22.6" ry="13.1" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M682.8,470.2 L682.8,484.0 A21.9,12.7 0 0 0 726.7,484.0 L726.7,470.2 A21.9,12.7 0 0 1 682.8,470.2 Z" fill="#3d8fd6" fill-opacity="0.75"/>
+<ellipse cx="704.7" cy="470.2" rx="21.9" ry="12.7" fill="#8fc3ec"/>
+<ellipse cx="704.7" cy="463.4" rx="22.6" ry="13.1" fill="none" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="5 4"/>
+<path d="M682.1,449.7 L682.1,484.0 A22.6,13.1 0 0 0 727.3,484.0 L727.3,449.7 A22.6,13.1 0 0 1 682.1,449.7 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="704.7" cy="449.7" rx="22.6" ry="13.1" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="722.8" cy="471.2" rx="4.5" ry="5.5" fill="#2b1a0c" stroke="#c0392b" stroke-width="1"/>
+<text x="704.7" y="515.0" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">a0かつb1</text>
+<path d="M901.5,449.7 L901.5,484.0 A22.6,13.1 0 0 0 946.8,484.0 L946.8,449.7 A22.6,13.1 0 0 1 901.5,449.7 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="924.2" cy="449.7" rx="22.6" ry="13.1" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<ellipse cx="924.2" cy="463.4" rx="22.6" ry="13.1" fill="none" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="5 4"/>
+<path d="M901.5,449.7 L901.5,484.0 A22.6,13.1 0 0 0 946.8,484.0 L946.8,449.7 A22.6,13.1 0 0 1 901.5,449.7 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="924.2" cy="449.7" rx="22.6" ry="13.1" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="942.3" cy="471.2" rx="4.5" ry="5.5" fill="#2b1a0c" stroke="#c0392b" stroke-width="1"/>
+<text x="924.2" y="515.0" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">a0かつb0</text>
+<path d="M437.9,763.0 L437.9,779.6 A29.1,16.8 0 0 0 496.1,779.6 L496.1,763.0 A29.1,16.8 0 0 1 437.9,763.0 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="467.0" cy="763.0" rx="29.1" ry="16.8" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M437.9,763.0 L437.9,779.6 A29.1,16.8 0 0 0 496.1,779.6 L496.1,763.0 A29.1,16.8 0 0 1 437.9,763.0 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="467.0" cy="763.0" rx="29.1" ry="16.8" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="467.0" y="814.4" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">1の溝</text>
+<path d="M712.2,763.0 L712.2,779.6 A29.1,16.8 0 0 0 770.4,779.6 L770.4,763.0 A29.1,16.8 0 0 1 712.2,763.0 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="741.3" cy="763.0" rx="29.1" ry="16.8" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M713.1,775.4 L713.1,779.6 A28.2,16.3 0 0 0 769.5,779.6 L769.5,775.4 A28.2,16.3 0 0 1 713.1,775.4 Z" fill="#3d8fd6" fill-opacity="0.75"/>
+<ellipse cx="741.3" cy="775.4" rx="28.2" ry="16.3" fill="#8fc3ec"/>
+<path d="M712.2,763.0 L712.2,779.6 A29.1,16.8 0 0 0 770.4,779.6 L770.4,763.0 A29.1,16.8 0 0 1 712.2,763.0 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="741.3" cy="763.0" rx="29.1" ry="16.8" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="741.3" y="814.4" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">0の溝</text>
+<path d="M306.8,209.6 Q315.4,179.6 284.1,293.9" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M507.9,209.6 Q516.6,179.6 485.3,293.9" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M727.3,209.6 Q736.0,179.6 704.7,293.9" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M928.5,209.6 Q937.2,179.6 905.9,293.9" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M284.1,325.6 Q284.1,413.8 265.8,433.8" fill="none" stroke="#2f7fc8" stroke-width="2" stroke-dasharray="4 3" stroke-opacity="0.8" marker-end="url(#ah)"/>
+<path d="M284.1,325.6 Q284.1,413.8 485.3,433.8" fill="none" stroke="#2f7fc8" stroke-width="2" stroke-dasharray="4 3" stroke-opacity="0.8" marker-end="url(#ah)"/>
+<path d="M485.3,325.6 Q485.3,413.8 704.7,433.8" fill="none" stroke="#2f7fc8" stroke-width="2" stroke-dasharray="4 3" stroke-opacity="0.8" marker-end="url(#ah)"/>
+<path d="M485.3,325.6 Q485.3,413.8 924.2,433.8" fill="none" stroke="#2f7fc8" stroke-width="2" stroke-dasharray="4 3" stroke-opacity="0.8" marker-end="url(#ah)"/>
+<path d="M704.7,325.6 Q704.7,413.8 265.8,433.8" fill="none" stroke="#2f7fc8" stroke-width="2" stroke-dasharray="4 3" stroke-opacity="0.8" marker-end="url(#ah)"/>
+<path d="M704.7,325.6 Q704.7,413.8 704.7,433.8" fill="none" stroke="#2f7fc8" stroke-width="2" stroke-dasharray="4 3" stroke-opacity="0.8" marker-end="url(#ah)"/>
+<path d="M905.9,325.6 Q905.9,413.8 485.3,433.8" fill="none" stroke="#2f7fc8" stroke-width="2" stroke-dasharray="4 3" stroke-opacity="0.8" marker-end="url(#ah)"/>
+<path d="M905.9,325.6 Q905.9,413.8 924.2,433.8" fill="none" stroke="#2f7fc8" stroke-width="2" stroke-dasharray="4 3" stroke-opacity="0.8" marker-end="url(#ah)"/>
+<path d="M284.0,471.2 Q309.0,471.2 741.3,747.1" fill="none" stroke="#2f7fc8" stroke-width="3" marker-end="url(#ah)"/>
+<path d="M503.4,471.2 Q528.4,471.2 467.0,747.1" fill="none" stroke="#2f7fc8" stroke-width="3" marker-end="url(#ah)"/>
+<path d="M722.8,471.2 Q747.8,471.2 467.0,747.1" fill="none" stroke="#2f7fc8" stroke-width="3" marker-end="url(#ah)"/>
+<path d="M942.3,471.2 Q967.3,471.2 741.3,747.1" fill="none" stroke="#2f7fc8" stroke-width="3" marker-end="url(#ah)"/>
+<line x1="265.9" y1="227.1" x2="268.3" y2="241.1" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="61.5" y="201.1" width="204" height="52.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="71.5" y="225.1" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">A1：a の1の器</text>
+<text x="71.5" y="243.1" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">入力値：1（1u 満たして注いだ）</text>
+<line x1="196.2" y1="363.6" x2="275.1" y2="325.6" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="9.2" y="283.6" width="187" height="160.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="19.2" y="307.6" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">SA1：分水口（a1を配る）</text>
+<text x="19.2" y="325.6" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">a1 の水は、2つの桝の両方で</text>
+<text x="19.2" y="343.6" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">b を待つ必要がある</text>
+<text x="19.2" y="361.6" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">（a1かつb1 と a1かつb0）</text>
+<text x="19.2" y="379.6" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">水は分けると減るので、</text>
+<text x="19.2" y="397.6" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">最初に 2u 注いで、</text>
+<text x="19.2" y="415.6" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">仕切りで 1u ずつ2本に分ける</text>
+<text x="19.2" y="433.6" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">（円筒分水などが使える）</text>
+<line x1="250.0" y1="524.0" x2="250.0" y2="484.0" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="28.2" y="524.0" width="249" height="88.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="38.2" y="548.0" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">K11：穴あき桝（a1 かつ b1）</text>
+<text x="38.2" y="566.0" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">穴の高さ = 1.5u（150mL）／容量 250mL</text>
+<text x="38.2" y="584.0" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">穴の高さ 1.5u。2u 来たら 0.5u が出る</text>
+<text x="38.2" y="602.0" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：水あり（1.5u）→ 1</text>
+<line x1="351.8" y1="805.6" x2="446.6" y2="779.6" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="177.9" y="779.6" width="174" height="52.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="187.9" y="803.6" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">X1：出力：XOR の1の溝</text>
+<text x="187.9" y="821.6" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：空 → 0</text>
+<line x1="792.2" y1="805.6" x2="720.9" y2="779.6" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="792.2" y="779.6" width="174" height="52.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="802.2" y="803.6" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">X0：出力：XOR の0の溝</text>
+<text x="802.2" y="821.6" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：水あり（0.5u）→ 1</text>
+<rect x="1100" y="140" width="364" height="150" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="1116.0" y="170.0" font-size="17" font-weight="bold" fill="#3a3226" text-anchor="start">図の状態：case a1b1 の後</text>
+<text x="1116.0" y="206.0" font-size="16" font-weight="normal" fill="#3a3226" text-anchor="start">入力：a1=1　a0=0　b1=1　b0=0</text>
+<text x="1116.0" y="240.0" font-size="20" font-weight="bold" fill="#2f7fc8" text-anchor="start">出力：1の溝=0　0の溝=1</text>
+<text x="1116.0" y="274.0" font-size="13" font-weight="normal" fill="#6a5e4c" text-anchor="start">水が残っている器＝1、空の器＝0</text>
+<rect x="1100" y="305" width="364" height="120" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="1116.0" y="331.0" font-size="15" font-weight="bold" fill="#3a3226" text-anchor="start">人の操作（判断なし・この順に）</text>
+<text x="1116.0" y="355.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">1. 入力：A1 の栓を抜く／注ぐ</text>
+<text x="1116.0" y="375.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">2. 入力：A0 の栓を抜く／注ぐ</text>
+<text x="1116.0" y="395.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">3. 入力：B1 の栓を抜く／注ぐ</text>
+<text x="1116.0" y="415.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">4. 入力：B0 の栓を抜く／注ぐ</text>
+<rect x="1100" y="440" width="364" height="140" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="1116.0" y="466.0" font-size="15" font-weight="bold" fill="#3a3226" text-anchor="start">凡例</text>
+<rect x="1116" y="478" width="26" height="14" fill="#c98b5a" fill-opacity="0.4" stroke="#7a4a26"/>
+<text x="1152.0" y="490.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">土器の器</text>
+<rect x="1290" y="478" width="10" height="13" rx="2" fill="#8a5a2b"/>
+<text x="1310.0" y="490.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">木の栓</text>
+<rect x="1116" y="502" width="26" height="8" fill="#6b8f2a"/>
+<text x="1152.0" y="511.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">竹の管（サイフォン）</text>
+<line x1="1116" y1="530" x2="1142" y2="530" stroke="#c0392b" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="1152.0" y="535.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">しきい値・穴の高さ</text>
+<line x1="1116" y1="556" x2="1142" y2="556" stroke="#2f7fc8" stroke-width="3" marker-end="url(#ah)"/>
+<text x="1152.0" y="561.0" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">水の流れ（緑の管＝サイフォン、茶の点線＝栓・注ぎ）</text>
+<text x="1480.0" y="877.0" font-size="12" font-weight="normal" fill="#6a5e4c" text-anchor="end">寸法は設計値（未試作）。❓の前提は YAML の assumptions を参照</text>
+</svg>
