@@ -202,5 +202,5 @@
 
 ## 10. 更新履歴
 
-- 2026-10-10：最初の引き継ぎメモを作成（[handoff/HANDOFF_20261010_initial.md](handoff/HANDOFF_20261010_initial.md)）
+- 2026-10-10：最初の引き継ぎメモを作成。作成者は Sakana AI の Namazu（[handoff/HANDOFF_20261010_initial_sakana-namazu.md](handoff/HANDOFF_20261010_initial_sakana-namazu.md)）
 - 2026-10-10：日経2014と村上ら2017を読んで反映。傾斜とくぼみの呼び方を確認、欠損部ポート説を取り下げ、設計の方針（§5）と先行研究（§6）を追加。公開リポジトリの正式な引き継ぎファイルとして公開
