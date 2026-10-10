@@ -24,6 +24,8 @@ assumptions: # 前提と未確認事項（✅💭❓）
 | `splitter` | 分水口。来た水を `split_to` の行き先へ等分する | `split_to`（リスト） |
 | `tipping_bucket` | 両升（左右に升がある転倒升）。上の升に `compartment_mL` 溜まるたびに傾いて中身を出し、向きが 0↔1 と入れ替わる（初めは向き0） | `compartment_mL`, `dump_to: [向き0で傾いたときの行き先, 向き1のとき]` |
 | `vane` | 振り分け板。`bucket` の両升と同じ軸で動き、来た水を向きに応じて振り分ける | `bucket`, `route_to: [向き0のとき, 向き1のとき]` |
+| `sozu` | 添水（鹿威し）。中身が `threshold_mL` 以上になると傾いて全部を `dump_to` へ出し、空で戻る | `threshold_mL`, `capacity_mL`, `dump_to` |
+| `chute` | 受け樋。来た水を、人が向けた先へ流す。初めの向きは `route` | `route`, `route_options`（図に描く行き先の候補） |
 | `basin` | 受けの器。ためるだけ | `capacity_mL` |
 
 共通の省略可能な項目：
@@ -41,6 +43,7 @@ assumptions: # 前提と未確認事項（✅💭❓）
 |---|---|
 | `fill: X` | 計量の器 X を、溢れるまで満たす |
 | `release: X` | X の中身を全部 `drain_to` へ出す（栓を抜く・注ぐ）。空なら何も起きない |
+| `set_route: R, to: Y` | 受け樋 R を Y へ向ける（決まった順に向けるだけ。判断なし） |
 
 各操作の後、水の動き（サイフォン・溢れ）が落ち着くまで待つものとします。`phase` で段階の名前を付けられます。
 

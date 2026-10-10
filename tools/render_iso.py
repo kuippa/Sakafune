@@ -60,6 +60,7 @@ class Sim:
         self.parts = {p["id"]: p for p in model["parts"]}
         self.vol = {pid: 0.0 for pid in self.parts}
         self.state = {pid: 0 for pid, p in self.parts.items() if p["type"] == "tipping_bucket"}
+        self.route = {pid: p["route"] for pid, p in self.parts.items() if p["type"] == "chute"}
 
     def settle(self):
         changed = True
@@ -74,6 +75,16 @@ class Sim:
                 elif p["type"] == "holed_cup" and v > p["hole_mL"] + 1e-9:
                     self.vol[p["hole_to"]] += v - p["hole_mL"]
                     self.vol[pid] = p["hole_mL"]
+                    changed = True
+                elif p["type"] == "sozu" and v >= p["threshold_mL"] - 1e-9:
+                    # 添水：決まった量で傾いて全部出し、空になって元に戻る
+                    self.vol[p["dump_to"]] += v
+                    self.vol[pid] = 0.0
+                    changed = True
+                elif p["type"] == "chute" and v > 1e-9:
+                    # 受け樋：人が向けた先へ流す
+                    self.vol[self.route[pid]] += v
+                    self.vol[pid] = 0.0
                     changed = True
                 elif p["type"] == "tipping_bucket" and v >= p["compartment_mL"] - 1e-9:
                     # 上を向いている升が満ちると傾いて中身を出し、向きが入れ替わる
@@ -102,6 +113,8 @@ class Sim:
         if "fill" in step:
             p = self.parts[step["fill"]]
             self.vol[p["id"]] = p["volume_mL"]
+        elif "set_route" in step:
+            self.route[step["set_route"]] = step["to"]
         elif "release" in step:
             pid = step["release"]
             self.vol[self.parts[pid]["drain_to"]] += self.vol[pid]
@@ -154,7 +167,7 @@ def part_height(part):
         return height_cm(part, part["capacity_mL"])
     if part["type"] == "splitter":
         return 3
-    if part["type"] in ("tipping_bucket", "vane"):
+    if part["type"] in ("tipping_bucket", "vane", "sozu", "chute"):
         return 8
     if part["type"] == "metering_cup":
         return height_cm(part, part["volume_mL"]) * 1.15
@@ -236,6 +249,44 @@ def draw_tipping(iso, part, state, water_ml):
         geo = {"cx": cx, "top": pivot - 6, "rx": 3 * s, "ry": 2 * s, "bot": pivot + L * 0.9}
     if part.get("tag"):
         out.append(text(cx, geo["bot"] + 36, part["tag"], 14, "bold", anchor="middle"))
+    return out, geo
+
+
+def draw_sozu(iso, part, water_ml, route=None):
+    """添水（竹筒）と受け樋の模式。"""
+    x, y, z = part["position"]
+    cx, base = iso.p(x, y, z)
+    _, pivot = iso.p(x, y, z + 6)
+    s = iso.s
+    out = []
+    if part["type"] == "sozu":
+        L, T = 9 * s, 3.4 * s
+        out.append(f'<line x1="{cx:.1f}" y1="{base:.1f}" x2="{cx:.1f}" y2="{pivot:.1f}" stroke="{COL["plug"]}" stroke-width="5"/>')
+        g = [f'<g transform="rotate(-28 {cx:.1f} {pivot:.1f})">',
+             f'<rect x="{cx - L:.1f}" y="{pivot - T:.1f}" width="{2 * L:.1f}" height="{T:.1f}" rx="{T / 2:.1f}" '
+             f'fill="#cfe0a6" stroke="{COL["tube"]}" stroke-width="2.5"/>']
+        cap = part["capacity_mL"]
+        if water_ml > 1e-9:
+            fr = min(1, water_ml / cap)
+            g.append(f'<rect x="{cx - L + 2:.1f}" y="{pivot - T + 2:.1f}" width="{(L - 2) * fr:.1f}" '
+                     f'height="{T - 4:.1f}" fill="{COL["water"]}" fill-opacity="0.8"/>')
+        th = part["threshold_mL"] / cap
+        g.append(f'<line x1="{cx - L + 2 + (L - 2) * th:.1f}" y1="{pivot - T:.1f}" x2="{cx - L + 2 + (L - 2) * th:.1f}" '
+                 f'y2="{pivot:.1f}" stroke="{COL["thr"]}" stroke-width="2" stroke-dasharray="3 2"/>')
+        g.append("</g>")
+        out += g
+        out.append(f'<circle cx="{cx:.1f}" cy="{pivot:.1f}" r="4" fill="#4a2e12"/>')
+        geo = {"cx": cx, "top": pivot - L * 0.55, "rx": L * 0.9, "ry": T * 0.5, "bot": base}
+    else:  # chute
+        w = 7 * s
+        out.append(f'<path d="M{cx - w:.1f},{pivot - 8:.1f} L{cx + w:.1f},{pivot - 8:.1f} L{cx + w * 0.3:.1f},{pivot + 10:.1f} '
+                   f'L{cx - w * 0.3:.1f},{pivot + 10:.1f} Z" fill="{COL["wall"]}" fill-opacity="0.45" '
+                   f'stroke="{COL["plug"]}" stroke-width="2.5"/>')
+        if route:
+            out.append(text(cx, pivot - 14, f"いま→{route}", 13, "bold", COL["thr"], anchor="middle"))
+        geo = {"cx": cx, "top": pivot - 10, "rx": w, "ry": 4, "bot": pivot + 12}
+    if part.get("tag"):
+        out.append(text(cx, geo["bot"] + 22, part["tag"], 14, "bold", anchor="middle"))
     return out, geo
 
 
@@ -340,7 +391,9 @@ def callout_lines(part, vol_ml, u, inputs):
                       f"／容量 {part['capacity_mL']}mL", 12, "normal"))
     for n in part.get("notes", []):
         lines.append((n, 12, "normal"))
-    if part["type"] in ("splitter", "tipping_bucket", "vane"):
+    if part["type"] == "sozu":
+        lines.append((f"傾く量 = {part['threshold_mL'] / u:g}u（{part['threshold_mL']}mL）", 12, "normal"))
+    if part["type"] in ("splitter", "tipping_bucket", "vane", "chute"):
         return lines
     if part["id"] in inputs:
         v = int(bool(inputs[part["id"]]))
@@ -414,7 +467,10 @@ def readout_panel(model, case, vol, x, y):
 def procedure_panel(model, x, y):
     lines = []
     for s in model["procedure"]:
-        act = f"{s['fill']} を満たす" if "fill" in s else f"{s['release']} の栓を抜く／注ぐ"
+        if "set_route" in s:
+            act = f"受け樋 {s['set_route']} を {s['to']} へ向ける"
+        else:
+            act = f"{s['fill']} を満たす" if "fill" in s else f"{s['release']} を注ぐ（栓を抜く）"
         lines.append(f"{s.get('phase', '')}：{act}")
     h = 40 + 20 * len(lines)
     out = [f'<rect x="{x}" y="{y}" width="364" height="{h}" rx="8" fill="{COL["panel"]}" '
@@ -455,8 +511,13 @@ def connections(model):
                 out.append((p, key, p[key]))
         for t in p.get("split_to", []):
             out.append((p, "split_to", t))
-        for i, t in enumerate(p.get("dump_to", [])):
-            out.append((p, f"dump_to{i}", t))
+        if p["type"] == "sozu":
+            out.append((p, "sozu_to", p["dump_to"]))
+        else:
+            for i, t in enumerate(p.get("dump_to", [])):
+                out.append((p, f"dump_to{i}", t))
+        for t in p.get("route_options", []):
+            out.append((p, "chute_opt", t))
         for i, t in enumerate(p.get("route_to", [])):
             out.append((p, f"route_to{i}", t))
     return out
@@ -483,7 +544,9 @@ def render(model, case, W=1500, H=None):
     # 器（奥から手前の順に描く）
     geo = {}
     for p in sorted(model["parts"], key=lambda q: q["position"][0] + q["position"][1]):
-        if p["type"] in ("tipping_bucket", "vane"):
+        if p["type"] in ("sozu", "chute"):
+            shapes, g = draw_sozu(iso, p, vol.get(p["id"], 0.0), sim.route.get(p["id"]))
+        elif p["type"] in ("tipping_bucket", "vane"):
             st = sim.state[p["id"] if p["type"] == "tipping_bucket" else p["bucket"]]
             shapes, g = draw_tipping(iso, p, st, vol.get(p["id"], 0.0))
         else:
@@ -533,6 +596,18 @@ def render(model, case, W=1500, H=None):
             lab = ("向き0のとき" if i == 0 else "向き1のとき")
             if len(set(a.get("dump_to", a.get("route_to", [])))) > 1:  # 行き先が同じなら書かない
                 svg.append(text((sx + ex) / 2 + (-50 if i == 0 else 8), (sy + ey) / 2, lab, 12, "bold", colr))
+        elif kind == "sozu_to":
+            sx, sy = g["cx"] - g["rx"] * 0.75, g["top"] + 6
+            d = f"M{sx:.1f},{sy:.1f} Q{sx:.1f},{ey - 30:.1f} {ex:.1f},{ey:.1f}"
+            svg.append(f'<path d="{d}" fill="none" stroke="{COL["flow"]}" stroke-width="3" marker-end="url(#ah)"/>')
+            svg.append(text(ex - 175, ey - 14, "傾いたとき全部 →", 12, "bold", COL["flow"]))
+        elif kind == "chute_opt":
+            on = sim.route.get(a["id"]) == to
+            sx, sy = g["cx"], g["bot"]
+            d = f"M{sx:.1f},{sy:.1f} Q{sx:.1f},{ey - 20:.1f} {ex:.1f},{ey:.1f}"
+            svg.append(f'<path d="{d}" fill="none" stroke="{COL["flow"] if on else COL["sub"]}" '
+                       f'stroke-width="{3 if on else 1.5}" stroke-dasharray="{"none" if on else "4 5"}" '
+                       f'stroke-opacity="{1 if on else 0.6}" marker-end="url(#{"ah" if on else "ahk"})"/>')
         elif kind == "split_to":
             sx, sy = g["cx"], g["bot"]
             d = f"M{sx:.1f},{sy:.1f} Q{sx:.1f},{ey - 20:.1f} {ex:.1f},{ey:.1f}"

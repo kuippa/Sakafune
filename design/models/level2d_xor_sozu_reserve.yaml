@@ -1,0 +1,125 @@
+# レベル2d：添水（鹿威し）1つと予備の水 c, d で作る XOR／XNOR のモデル定義
+# このファイルが正本。書き方は SCHEMA.md を参照。
+# 状態の記号：✅確認済み / 💭推論・設計値 / ❓要確認（試作・調査で確かめる）
+#
+# 考え方（design/04_sozu-xor.md）：
+#   添水は「決まった量で傾いて全部出し、空になって戻る」。教訓桝（サイフォン）と同じ働きを、管なしでこなす。
+#   状態を「添水の向き」ではなく「添水に残っている水の量」で持たせ、手順を増やして読み出す。
+#     段階1：a, b を注ぐ（受け樋は捨て溝へ）。残る水 ＝ a+b の偶奇（0 か 1u）
+#     段階2：受け樋を Y1 へ向けて、予備の水 c（1u）を注ぐ。奇数なら合計 2u で傾き、Y1 に 2u
+#            → このとき添水に残る水 ＝ 偶奇の反対（偶数なら c の 1u が残る）
+#     段階3：受け樋を Y0 へ向けて、予備の水 d（1u）を注ぐ。偶数なら合計 2u で傾き、Y0 に 2u
+#   Y1 に水 ＝ a XOR b、Y0 に水 ＝ a XNOR b。どの場合もどちらか一方に 2u が出る。
+
+meta:
+  id: level2d_xor_sozu_reserve
+  title: 添水1つと予備の水で作る XOR／XNOR
+  design_doc: ../04_sozu-xor.md
+  author: claude-opus-5-5
+  created: 2026-10-10
+  status: 💭 設計値（未試作）
+  caption: 状態を添水に残る水の量で持たせる。受け樋の向きを段階ごとに変え、予備の水 c, d で読み出す。両升なし。
+
+layout:
+  fit_box: [250, 190, 1000, -70]
+
+units:
+  length: cm
+  volume: mL
+  u_mL: 100
+
+parts:
+  - {id: IA, type: metering_cup, name: 入力 a, volume_mL: 100, inner_diameter_cm: 6,
+     position: [-40, 40, 100], drain_to: T, tag: a, callout: [-240, -40]}
+  - {id: IB, type: metering_cup, name: 入力 b, volume_mL: 100, inner_diameter_cm: 6,
+     position: [-26, 26, 100], drain_to: T, tag: b, hide_callout: true}
+  - {id: IC, type: metering_cup, name: "予備の水 c（毎回 1u）", volume_mL: 100, inner_diameter_cm: 6,
+     position: [-12, 12, 100], drain_to: T, tag: c, hide_callout: true}
+  - id: ID
+    type: metering_cup
+    name: "予備の水 d（毎回 1u）"
+    volume_mL: 100
+    inner_diameter_cm: 6
+    position: [2, -2, 100]
+    drain_to: T
+    tag: d
+    notes: ["c と d は毎回かならず 1u 注ぐ", "（人が同じように満たす＝電源の役）"]
+    callout: [40, -70]
+
+  - id: T
+    type: sozu
+    name: "添水（竹筒の鹿威し）"
+    threshold_mL: 150      # 1.5u 溜まると傾く（1u では傾かず、2u で傾く） 💭
+    capacity_mL: 250
+    inner_diameter_cm: 14
+    position: [-18, 18, 60]
+    dump_to: R
+    tag: 添水
+    notes: ["1u では傾かず、2u で傾いて全部出す", "残っている水の量（0 か 1u）が状態になる"]
+    callout: [-300, 20]
+
+  - id: R
+    type: chute
+    name: 受け樋（人が向きを変える）
+    inner_diameter_cm: 10
+    position: [0, 0, 34]
+    route: W
+    route_options: [W, Y1, Y0]
+    tag: 受け樋
+    notes: ["段階1 → 捨て溝、段階2 → Y1、段階3 → Y0", "（決まった順に向けるだけ。判断なし）"]
+    callout: [70, -10]
+
+  - {id: W, type: basin, name: "捨て溝の受け", inner_diameter_cm: 10, capacity_mL: 300,
+     position: [-34, 34, 6], tag: 捨て溝, callout: [-200, 30]}
+  - {id: Y1, type: basin, name: "出力 Y1：a XOR b", inner_diameter_cm: 9, capacity_mL: 300,
+     position: [0, 0, 4], tag: "Y1：XOR", callout: [-170, 60]}
+  - {id: Y0, type: basin, name: "出力 Y0：a XNOR b", inner_diameter_cm: 9, capacity_mL: 300,
+     position: [34, -34, 4], tag: "Y0：XNOR", callout: [30, 50]}
+
+procedure:
+  - {phase: "段階1", release: IA}
+  - {phase: "段階1", release: IB}
+  - {phase: "段階2", set_route: R, to: Y1}
+  - {phase: "段階2", fill: IC}
+  - {phase: "段階2", release: IC}
+  - {phase: "段階3", set_route: R, to: Y0}
+  - {phase: "段階3", fill: ID}
+  - {phase: "段階3", release: ID}
+
+cases:
+  - {id: a0b0, inputs: {IA: 0, IB: 0}, expect: {Y1: 0, Y0: 1}}
+  - {id: a1b0, inputs: {IA: 1, IB: 0}, expect: {Y1: 1, Y0: 0}}
+  - {id: a0b1, inputs: {IA: 0, IB: 1}, expect: {Y1: 1, Y0: 0}}
+  - {id: a1b1, inputs: {IA: 1, IB: 1}, expect: {Y1: 0, Y0: 1}}
+
+readout:
+  kind: named
+  inputs:
+    - {id: IA, label: a}
+    - {id: IB, label: b}
+  items:
+    - {id: Y1, label: "XOR(Y1)"}
+    - {id: Y0, label: "XNOR(Y0)"}
+  default_case: a1b0
+
+reset:
+  - 出力の器と捨て溝の受けを空にする
+  - 添水に残った水（a XOR b が 1 のときは d の 1u）を捨てる
+  - 受け樋を捨て溝へ戻す
+
+assumptions:
+  - id: S1
+    text: 添水は 1u では傾かず、2u（実際は 1.5u を超えたところ）で確実に傾き、中身を全部出して元に戻る
+    status: ❓
+  - id: S2
+    text: 注いでいる途中で傾いても、注いだ水が全部いっしょに出る（傾くまでに 1u を注ぎ切る）。注ぎ口を大きくして一気に落とすか、傾く量を 2u に近づける。途中で傾いて残りが溜まると、次の段階で数え間違える
+    status: ❓ いちばん大きな課題
+  - id: S3
+    text: a と b を続けて注いでも、それぞれ 1u ずつ数えられる（2u になった時点で傾き、空に戻る）
+    status: ❓
+  - id: S4
+    text: 出力は 2u（添水に残っていた 1u ＋ 予備の水 1u）。2本に分けて次の2つの回路へ配れる
+    status: 💭
+  - id: S5
+    text: 添水・竹筒・受け樋は、竹と木で作れる。添水は農具（鳥獣よけ）・ばったり（米つき）として広く作られてきた
+    status: 🔍 references/05
