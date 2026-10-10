@@ -1,0 +1,119 @@
+# レベル2c：両升（転倒升）と予備の水 c で作る XOR／XNOR のモデル定義
+# このファイルが正本。書き方は SCHEMA.md を参照。
+# 状態の記号：✅確認済み / 💭推論・設計値 / ❓要確認（試作・調査で確かめる）
+#
+# 考え方（design/03_toggle-reserve.md）：
+#   c は「必ず 1u 来る予備の水」。合計 a+b+c が 1u か 3u なら c を出力へ、2u なら c を別の溝へ流す。
+#   ＝ a と b が同じなら出力（XNOR）、違えば別の溝（XOR）。
+#   どの場合も c の水が必ずどちらかに出るので、「水が来ないこと」を待って判断しなくてよい。
+#   2u のときだけ切り替えるスイッチとして、両升（左右に升がある転倒升）を使う。
+#     a, b を両升に注ぐ → 1u ごとに傾いて向きが入れ替わる → 最後の向き ＝ a+b の偶奇
+#     両升と同じ軸に付けた振り分け板に c を注ぐ → 向きで c の行き先が決まる
+
+meta:
+  id: level2c_xnor_toggle_reserve
+  title: 両升と予備の水 c で作る XOR／XNOR
+  design_doc: ../03_toggle-reserve.md
+  author: claude-opus-5-5
+  created: 2026-10-10
+  status: 💭 設計値（未試作）
+  caption: a, b を両升に注ぐと向きが偶奇で決まる。最後に予備の水 c（必ず 1u）を振り分け板に注ぐと、向きで出口が決まる。
+
+layout:
+  fit_box: [260, 190, 1000, -70]
+
+units:
+  length: cm
+  volume: mL
+  u_mL: 100
+
+parts:
+  - {id: IA, type: metering_cup, name: 入力 a, volume_mL: 100, inner_diameter_cm: 6,
+     position: [-34, 34, 100], drain_to: TB, tag: a, callout: [-200, -30]}
+  - {id: IB, type: metering_cup, name: 入力 b, volume_mL: 100, inner_diameter_cm: 6,
+     position: [-14, 14, 100], drain_to: TB, tag: b, hide_callout: true}
+  - id: IC
+    type: metering_cup
+    name: 予備の水 c（毎回かならず 1u）
+    volume_mL: 100
+    inner_diameter_cm: 6
+    position: [26, -26, 100]
+    drain_to: VN
+    tag: c
+    notes: ["a と b を注ぎ終えてから注ぐ", "人が毎回同じように満たす（電源の役）"]
+    callout: [-330, 50]
+
+  - id: TB
+    type: tipping_bucket
+    name: 両升（左右に升がある転倒升）
+    compartment_mL: 100
+    inner_diameter_cm: 12
+    position: [-22, 22, 62]
+    dump_to: [W, W]        # [向き0で傾いたとき, 向き1で傾いたとき] の行き先
+    tag: 両升
+    notes: ["升1つ＝1u。上の升が満ちるたびに傾いて", "中身を出し、向きが 0↔1 と入れ替わる", "最後の向き ＝ a+b の偶奇（＝ a XOR b）"]
+    callout: [-310, 70]
+
+  - id: VN
+    type: vane
+    name: 振り分け板（両升と同じ軸）
+    inner_diameter_cm: 6
+    bucket: TB
+    position: [16, -16, 62]
+    route_to: [Y0, Y1]     # [向き0のとき, 向き1のとき] の行き先
+    tag: 振り分け板
+    notes: ["両升の向きで傾きが変わり、", "c の水を Y0 か Y1 へ振り分ける"]
+    callout: [60, 10]
+
+  - {id: W, type: basin, name: "捨て溝の受け（a と b の水）", inner_diameter_cm: 10, capacity_mL: 300,
+     position: [-34, 34, 10], tag: 捨て溝, callout: [-260, 30]}
+  - {id: Y0, type: basin, name: "出力 Y0：合計 1u か 3u（a と b が同じ）", inner_diameter_cm: 8,
+     capacity_mL: 200, position: [2, -2, 10], tag: "Y0：XNOR", callout: [-150, 70]}
+  - {id: Y1, type: basin, name: "出力 Y1：合計 2u（a と b が違う）", inner_diameter_cm: 8,
+     capacity_mL: 200, position: [34, -34, 10], tag: "Y1：XOR", callout: [40, 50]}
+
+procedure:
+  - {phase: "段階1 入力", release: IA}
+  - {phase: "段階1 入力", release: IB}
+  - {phase: "段階2 予備の水", fill: IC}
+  - {phase: "段階2 予備の水", release: IC}
+
+cases:
+  - {id: a0b0, inputs: {IA: 0, IB: 0}, expect: {Y0: 1, Y1: 0}}
+  - {id: a1b0, inputs: {IA: 1, IB: 0}, expect: {Y0: 0, Y1: 1}}
+  - {id: a0b1, inputs: {IA: 0, IB: 1}, expect: {Y0: 0, Y1: 1}}
+  - {id: a1b1, inputs: {IA: 1, IB: 1}, expect: {Y0: 1, Y1: 0}}
+
+readout:
+  kind: named
+  inputs:
+    - {id: IA, label: a}
+    - {id: IB, label: b}
+  items:
+    - {id: Y0, label: "XNOR(Y0)"}
+    - {id: Y1, label: "XOR(Y1)"}
+  default_case: a1b1
+
+reset:
+  - 出力の器と捨て溝の受けを空にする
+  - 両升を向き0（左の升が上）に戻す。または、向きをそのまま次の計算の初めの状態として記録しておく
+
+assumptions:
+  - id: T1
+    text: 両升は 1u で確実に傾き、中身を出し切って、反対側の升が上で止まる
+    status: ❓
+  - id: T2
+    text: a と b を続けて注いでも、傾いている途中にこぼれて数え間違えない（1u ずつ間を空けて注げば避けられる見込み）
+    status: ❓
+  - id: T3
+    text: 振り分け板は両升と同じ軸で動き、両升の向きに応じて確実に左右へ倒れている
+    status: ❓
+  - id: T4
+    text: c は振り分け板に当たるだけで、両升には入らない（両升の向きを変えない）
+    status: 💭
+  - id: T5
+    text: c は a, b を注ぎ終えた後に注ぐ（人の操作の順番。判断は要らない）
+    status: 💭
+  - id: T6
+    text: 出力は c の水そのもの（毎回新しい 1u）なので、何段つないでも量が減らない
+    status: 💭

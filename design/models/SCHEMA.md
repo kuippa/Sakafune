@@ -22,6 +22,8 @@ assumptions: # 前提と未確認事項（✅💭❓）
 | `siphon_cup` | 教訓桝。中身が `threshold_mL` 以上になると、全部が `siphon_to` へ抜ける | `threshold_mL`, `capacity_mL`, `siphon_to`, `siphon_tube_inner_diameter_mm`, `drain_to`（栓の行き先、省略可） |
 | `holed_cup` | 穴あき桝。中身が `hole_mL` を超えた分だけ、側面の穴から `hole_to` へ出る | `hole_mL`, `capacity_mL`, `hole_to` |
 | `splitter` | 分水口。来た水を `split_to` の行き先へ等分する | `split_to`（リスト） |
+| `tipping_bucket` | 両升（左右に升がある転倒升）。上の升に `compartment_mL` 溜まるたびに傾いて中身を出し、向きが 0↔1 と入れ替わる（初めは向き0） | `compartment_mL`, `dump_to: [向き0で傾いたときの行き先, 向き1のとき]` |
+| `vane` | 振り分け板。`bucket` の両升と同じ軸で動き、来た水を向きに応じて振り分ける | `bucket`, `route_to: [向き0のとき, 向き1のとき]` |
 | `basin` | 受けの器。ためるだけ | `capacity_mL` |
 
 共通の省略可能な項目：

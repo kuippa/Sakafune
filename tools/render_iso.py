@@ -59,6 +59,7 @@ class Sim:
     def __init__(self, model):
         self.parts = {p["id"]: p for p in model["parts"]}
         self.vol = {pid: 0.0 for pid in self.parts}
+        self.state = {pid: 0 for pid, p in self.parts.items() if p["type"] == "tipping_bucket"}
 
     def settle(self):
         changed = True
@@ -73,6 +74,17 @@ class Sim:
                 elif p["type"] == "holed_cup" and v > p["hole_mL"] + 1e-9:
                     self.vol[p["hole_to"]] += v - p["hole_mL"]
                     self.vol[pid] = p["hole_mL"]
+                    changed = True
+                elif p["type"] == "tipping_bucket" and v >= p["compartment_mL"] - 1e-9:
+                    # 上を向いている升が満ちると傾いて中身を出し、向きが入れ替わる
+                    self.vol[pid] -= p["compartment_mL"]
+                    self.vol[p["dump_to"][self.state[pid]]] += p["compartment_mL"]
+                    self.state[pid] ^= 1
+                    changed = True
+                elif p["type"] == "vane" and v > 1e-9:
+                    # 振り分け板：つながった両升の向きで行き先が決まる
+                    self.vol[p["route_to"][self.state[p["bucket"]]]] += v
+                    self.vol[pid] = 0.0
                     changed = True
                 elif p["type"] == "splitter" and v > 1e-9:
                     for t in p["split_to"]:
@@ -105,13 +117,13 @@ def run_case(model, case):
     for _ in range(case.get("repeat", 1)):
         for step in model["procedure"]:
             sim.do(step)
-    return sim.vol
+    return sim
 
 
 def check_cases(model):
     results = []
     for case in model.get("cases", []):
-        vol = run_case(model, case)
+        vol = run_case(model, case).vol
         got = {k: int(vol[k] > 1e-9) for k in case["expect"]}
         results.append((case["id"], case["expect"], got, got == case["expect"]))
     return results
@@ -142,6 +154,8 @@ def part_height(part):
         return height_cm(part, part["capacity_mL"])
     if part["type"] == "splitter":
         return 3
+    if part["type"] in ("tipping_bucket", "vane"):
+        return 8
     if part["type"] == "metering_cup":
         return height_cm(part, part["volume_mL"]) * 1.15
     return 5
@@ -188,6 +202,41 @@ def cylinder_shape(iso, x, y, z0, z1, r):
             f"L{cx + rx:.1f},{top:.1f} "
             f"A{rx:.1f},{ry:.1f} 0 0 1 {cx - rx:.1f},{top:.1f} Z")
     return body, (cx, top, rx, ry), (cx, bot, rx, ry)
+
+
+def draw_tipping(iso, part, state, water_ml):
+    """両升（左右に升がある転倒升）と振り分け板の模式。向き（state）で傾きを変える。"""
+    x, y, z = part["position"]
+    cx, base = iso.p(x, y, z)
+    _, pivot = iso.p(x, y, z + 6)
+    s = iso.s
+    ang = -22 if state == 0 else 22   # 0：左の升が上（受ける側）
+    out = [f'<line x1="{cx:.1f}" y1="{base:.1f}" x2="{cx:.1f}" y2="{pivot:.1f}" stroke="{COL["plug"]}" stroke-width="5"/>']
+    if part["type"] == "tipping_bucket":
+        w, h = 7 * s, 3.2 * s
+        g = [f'<g transform="rotate({ang} {cx:.1f} {pivot:.1f})">',
+             f'<path d="M{cx - w:.1f},{pivot - h:.1f} L{cx - w:.1f},{pivot:.1f} L{cx + w:.1f},{pivot:.1f} '
+             f'L{cx + w:.1f},{pivot - h:.1f} M{cx:.1f},{pivot:.1f} L{cx:.1f},{pivot - h * 1.1:.1f}" '
+             f'fill="{COL["wall"]}" fill-opacity="0.35" stroke="{COL["wall_edge"]}" stroke-width="2.5"/>']
+        if water_ml > 1e-9:
+            fr = min(1, water_ml / part["compartment_mL"])
+            g.append(f'<rect x="{cx - w + 2:.1f}" y="{pivot - h * fr:.1f}" width="{w - 4:.1f}" '
+                     f'height="{h * fr - 1:.1f}" fill="{COL["water"]}" fill-opacity="0.75"/>')
+        g.append("</g>")
+        out += g
+        out.append(f'<circle cx="{cx:.1f}" cy="{pivot:.1f}" r="4" fill="#4a2e12"/>')
+        out.append(text(cx, base + 18, f"向き {state}", 13, "bold", COL["thr"], anchor="middle"))
+        geo = {"cx": cx, "top": pivot - h * 1.6, "rx": w, "ry": h * 0.5, "bot": base}
+    else:  # vane
+        L = 6 * s
+        out.append(f'<line x1="{cx:.1f}" y1="{pivot:.1f}" x2="{cx:.1f}" y2="{pivot + L:.1f}" '
+                   f'stroke="{COL["plug"]}" stroke-width="6" stroke-linecap="round" '
+                   f'transform="rotate({ang} {cx:.1f} {pivot:.1f})"/>')
+        out.append(f'<circle cx="{cx:.1f}" cy="{pivot:.1f}" r="4" fill="#4a2e12"/>')
+        geo = {"cx": cx, "top": pivot - 6, "rx": 3 * s, "ry": 2 * s, "bot": pivot + L * 0.9}
+    if part.get("tag"):
+        out.append(text(cx, geo["bot"] + 36, part["tag"], 14, "bold", anchor="middle"))
+    return out, geo
 
 
 def draw_vessel(iso, part, water_ml):
@@ -291,7 +340,7 @@ def callout_lines(part, vol_ml, u, inputs):
                       f"／容量 {part['capacity_mL']}mL", 12, "normal"))
     for n in part.get("notes", []):
         lines.append((n, 12, "normal"))
-    if part["type"] == "splitter":
+    if part["type"] in ("splitter", "tipping_bucket", "vane"):
         return lines
     if part["id"] in inputs:
         v = int(bool(inputs[part["id"]]))
@@ -406,6 +455,10 @@ def connections(model):
                 out.append((p, key, p[key]))
         for t in p.get("split_to", []):
             out.append((p, "split_to", t))
+        for i, t in enumerate(p.get("dump_to", [])):
+            out.append((p, f"dump_to{i}", t))
+        for i, t in enumerate(p.get("route_to", [])):
+            out.append((p, f"route_to{i}", t))
     return out
 
 
@@ -413,7 +466,8 @@ def render(model, case, W=1500, H=None):
     parts = {p["id"]: p for p in model["parts"]}
     H = H or max(860, 475 + 40 + 20 * len(model["procedure"]) + 300)
     u = model["units"]["u_mL"]
-    vol = run_case(model, case)
+    sim = run_case(model, case)
+    vol = sim.vol
     box = model.get("layout", {}).get("fit_box", [300, 190, 1060, H - 80])
     iso = fit(model, tuple(box[:3]) + (box[3] if box[3] > 0 else H + box[3],))
 
@@ -429,7 +483,11 @@ def render(model, case, W=1500, H=None):
     # 器（奥から手前の順に描く）
     geo = {}
     for p in sorted(model["parts"], key=lambda q: q["position"][0] + q["position"][1]):
-        shapes, g = draw_vessel(iso, p, vol.get(p["id"], 0.0))
+        if p["type"] in ("tipping_bucket", "vane"):
+            st = sim.state[p["id"] if p["type"] == "tipping_bucket" else p["bucket"]]
+            shapes, g = draw_tipping(iso, p, st, vol.get(p["id"], 0.0))
+        else:
+            shapes, g = draw_vessel(iso, p, vol.get(p["id"], 0.0))
         geo[p["id"]] = g
         svg += shapes
 
@@ -463,6 +521,18 @@ def render(model, case, W=1500, H=None):
             d = f"M{sx:.1f},{sy:.1f} Q{sx + 25:.1f},{sy:.1f} {ex:.1f},{ey:.1f}"
             svg.append(f'<path d="{d}" fill="none" stroke="{COL["flow"]}" stroke-width="3" '
                        f'marker-end="url(#ah)"/>')
+        elif kind.startswith(("dump_to", "route_to")):
+            i = int(kind[-1])
+            sx = g["cx"] + (-1 if i == 0 else 1) * g["rx"] * 0.9
+            sy = g["bot"] - (g["bot"] - g["top"]) * 0.4
+            dash = "7 5" if kind.startswith("dump") else "none"
+            colr = COL["plug"] if kind.startswith("dump") else COL["flow"]
+            d = f"M{sx:.1f},{sy:.1f} Q{sx:.1f},{ey - 10:.1f} {ex:.1f},{ey:.1f}"
+            svg.append(f'<path d="{d}" fill="none" stroke="{colr}" stroke-width="2.5" '
+                       f'stroke-dasharray="{dash}" marker-end="url(#ah)"/>')
+            lab = ("向き0のとき" if i == 0 else "向き1のとき")
+            if len(set(a.get("dump_to", a.get("route_to", [])))) > 1:  # 行き先が同じなら書かない
+                svg.append(text((sx + ex) / 2 + (-50 if i == 0 else 8), (sy + ey) / 2, lab, 12, "bold", colr))
         elif kind == "split_to":
             sx, sy = g["cx"], g["bot"]
             d = f"M{sx:.1f},{sy:.1f} Q{sx:.1f},{ey - 20:.1f} {ex:.1f},{ey:.1f}"
@@ -473,6 +543,16 @@ def render(model, case, W=1500, H=None):
             d = f"M{sx:.1f},{sy:.1f} Q{sx + 20:.1f},{ey:.1f} {ex:.1f},{ey:.1f}"
             svg.append(f'<path d="{d}" fill="none" stroke="{COL["sub"]}" stroke-width="1.6" '
                        f'stroke-dasharray="3 4" marker-end="url(#ahk)"/>')
+
+    # 両升と振り分け板が同じ軸でつながっていることを示す
+    for p in model["parts"]:
+        if p["type"] == "vane":
+            a, b = geo[p["id"]], geo[p["bucket"]]
+            svg.append(f'<line x1="{a["cx"]:.1f}" y1="{a["top"] + 6:.1f}" x2="{b["cx"]:.1f}" '
+                       f'y2="{b["top"] + b["ry"] * 3.2:.1f}" stroke="#4a2e12" stroke-width="3" '
+                       f'stroke-dasharray="2 4"/>')
+            svg.append(text((a["cx"] + b["cx"]) / 2, (a["top"] + b["top"]) / 2 + 4, "同じ軸", 12,
+                            "bold", "#4a2e12", anchor="middle"))
 
     # 注釈
     for p in model["parts"]:
