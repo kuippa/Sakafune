@@ -1,0 +1,209 @@
+# レベル5a：酒船石を「天秤を釣り合わせる盤」として復元したモデル定義（大胆な仮説）
+# このファイルが正本。書き方は SCHEMA.md を参照。
+# 状態の記号：✅確認済み / 🔍二次資料 / 💭推論・設計値 / ❓要確認
+#
+# 前提（design/09_sakafune-reconstruction.md）：
+#   - 石は土台。上に粘土の縁・堰・注ぎ口、木と竹の天秤があったと仮に置く（すべて失われた） 💭
+#   - 石から使うのは、くぼみと溝の並び方・つながり方と、東から西への傾きだけ（村上ら2017 の呼び方：A1〜A4, BL〜DR, E1, E2, F, G）
+#   - 容積・深さは実測に合わせない（粘土で作り直されていたと仮定）
+#   - 欠損部（北・南の割れた部分）は使わない
+#
+# 座標：x ＝ 東端から西への距離（cm）、y ＝ 北が正（cm）、z ＝ 高さ（cm）。石は東から西へ 5.5° 下る。
+#
+# 働き（1回の手順で、毎回同じ操作）：
+#   A の上に吊った天秤 K がレジスタ r1（値 ＝ 北の皿 − 南の皿）。おもりなし、釣り合いの幅 ±0.5u。
+#   A1（3u のすり切りの升）を注ぐと、K の指し樋が
+#     北が重い（r1 > 0）→ 先が南へ振れて A3 → 南の列 BR・CR・DR
+#     南が重い（r1 < 0）→ A2 → 北の列 BL・CL・DL
+#     釣り合い（r1 = 0）→ A4 → 中央の列 E1・E2 → F → 下流（亀形石造物の方向）
+#   各列の3つのくぼみは、1u のすり切りの升を溢れでつないだもの（3u が 1u ずつに分かれる）。
+#     BR → 南の皿（軽い側に 1u 足す ＝ r1 が 1 減る）、CR → r0 の北の皿（r0 が 1 増える）
+#     BL → 北の皿（r1 が 1 増える）、CL → r0 の南の皿（r0 が 1 減る）
+#     E1 → 「次の命令へ」の控え、E2 → F → 下流
+#   → r1 が 0 になるまで r1 を r0 へ 1 ずつ移し（r0 += r1、符号つき）、0 になったら次の命令へ合図を出す。
+#     一度釣り合えば何回くり返しても変わらない（自然に止まる）。
+
+meta:
+  id: level5a_sakafune_balancing_board
+  title: 酒船石の復元仮説 ― 天秤を釣り合わせる盤
+  design_doc: ../09_sakafune-reconstruction.md
+  author: claude-opus-5-5
+  created: 2026-11-07
+  status: 💭 大胆な仮説（石の配置だけを手がかりにした思考実験）
+  caption: 灰色の板が酒船石（土台）。くぼみの上の器は、粘土で作り直した升と仮定。A の上の天秤がレジスタ r1。指し樋は軽い側の列へ水を送り、r1 を 0 へ近づけながら r0 へ移す。
+
+layout:
+  fit_box: [330, 175, 1090, -40]
+
+units:
+  length: cm
+  volume: mL
+  u_mL: 100
+
+parts:
+  - {id: STONE, type: stone, name: 酒船石（土台の石）, position: [0, 0, 0], size_cm: [550, 230, 100], tilt_deg: 5.5,
+     inner_diameter_cm: 0, tag: "酒船石（花崗岩 約5.5×2.3×1.0m、東→西へ5.5°下る）", hide_callout: true}
+
+  # ---- 東端：電源の升と、天秤 K（レジスタ r1） ----
+  - id: A1
+    type: metering_cup
+    name: "A1：電源の升（3u、すり切り）"
+    volume_mL: 300
+    inner_diameter_cm: 22
+    position: [35, 0, 96.6]
+    drain_to: XK
+    tag: A1
+    hide_callout: true
+  - {id: PA, type: pan, name: "r1 の北の皿", capacity_mL: 1500, inner_diameter_cm: 26,
+     position: [45, 160, 55], tag: "r1 北の皿", hide_callout: true}
+  - {id: PB, type: pan, name: "r1 の南の皿", capacity_mL: 1500, inner_diameter_cm: 26,
+     position: [45, -160, 55], tag: "r1 南の皿", hide_callout: true}
+  - id: K
+    type: balance
+    name: "天秤 K：レジスタ r1（北の皿 − 南の皿）"
+    inner_diameter_cm: 4
+    position: [45, 0, 150]
+    left: PA
+    right: PB
+    deadband_mL: 50
+    tag: "K（r1）"
+    notes: ["竿は南北に渡し、皿は石の両脇に吊る（おもりなし）", "A1 に毎回 3u（すり切り）を注ぎ、指し樋へ流す",
+            "北が重い → 指し樋の先は南へ → A3 → 南の列", "＝ 軽い側の列へ水が行く"]
+    callout: [-320, -80]
+  - {id: XK, type: pointer, name: K の指し樋, inner_diameter_cm: 4, position: [55, 0, 108],
+     balance: K, route_to: {left_heavy: A3, level: A4, right_heavy: A2}, tag: 指し樋, hide_callout: true}
+
+  # ---- A 群：指し樋の受け口（3方向） ----
+  - {id: A2, type: splitter, name: "A2：北の受け口", inner_diameter_cm: 12, position: [60, 22, 94.2],
+     split_to: [BL], tag: A2, hide_callout: true}
+  - {id: A4, type: splitter, name: "A4：中央の受け口", inner_diameter_cm: 12, position: [68, 0, 93.5],
+     split_to: [E1], tag: A4, hide_callout: true}
+  - id: A3
+    type: splitter
+    name: "A3：南の受け口"
+    inner_diameter_cm: 12
+    position: [60, -22, 94.2]
+    split_to: [BR]
+    tag: A3
+    hide_callout: true
+
+  # ---- 南の列（r1 > 0 のとき）：1u の升3つを溢れでつなぐ ----
+  - {id: BR, type: metering_cup, name: "BR：1u の升", volume_mL: 100, inner_diameter_cm: 22,
+     position: [125, -62, 88.0], overflow_to: CR, drain_to: PB, tag: BR, hide_callout: true}
+  - {id: CR, type: metering_cup, name: "CR：1u の升", volume_mL: 100, inner_diameter_cm: 22,
+     position: [195, -88, 81.2], overflow_to: DR, drain_to: QA, tag: CR, hide_callout: true}
+  - {id: DR, type: metering_cup, name: "DR：1u の升（予備）", volume_mL: 100, inner_diameter_cm: 22,
+     position: [290, -72, 72.1], overflow_to: W, drain_to: W, tag: DR, hide_callout: true}
+
+  # ---- 北の列（r1 < 0 のとき） ----
+  - id: BL
+    type: metering_cup
+    name: "B・C・D：1u の升を溢れでつなぐ"
+    volume_mL: 100
+    inner_diameter_cm: 22
+    position: [125, 62, 88.0]
+    overflow_to: CL
+    drain_to: PA
+    tag: BL
+    notes: ["3u が B → C → D の順に 1u ずつ入る", "B → r1 の軽い側の皿（r1 を 0 へ）", "C → r0 の皿（r0 へ移す）、D は予備"]
+    callout: [-465, 70]
+  - {id: CL, type: metering_cup, name: "CL：1u の升", volume_mL: 100, inner_diameter_cm: 22,
+     position: [195, 88, 81.2], overflow_to: DL, drain_to: QB, tag: CL, hide_callout: true}
+  - {id: DL, type: metering_cup, name: "DL：1u の升（予備）", volume_mL: 100, inner_diameter_cm: 22,
+     position: [290, 72, 72.1], overflow_to: W, drain_to: W, tag: DL, hide_callout: true}
+
+  # ---- 中央の列（r1 = 0 のとき） ----
+  - id: E1
+    type: metering_cup
+    name: "E：中央の長楕円（釣り合いの列）"
+    volume_mL: 100
+    inner_diameter_cm: 26
+    position: [195, 0, 81.2]
+    overflow_to: E2
+    drain_to: NEXT
+    tag: E1
+    notes: ["釣り合ったときだけ水が来る", "E1 → 次の命令への合図、E2 → F → 下流"]
+    callout: [-60, 170]
+  - {id: E2, type: metering_cup, name: "E2：1u の升", volume_mL: 100, inner_diameter_cm: 26,
+     position: [275, 0, 73.5], overflow_to: G, drain_to: F, tag: E2, hide_callout: true}
+  - {id: G, type: metering_cup, name: "G：1u の升（予備）", volume_mL: 100, inner_diameter_cm: 22,
+     position: [360, 45, 65.3], overflow_to: F, drain_to: W, tag: G, hide_callout: true}
+  - {id: F, type: splitter, name: "F：西端の出口", inner_diameter_cm: 12, position: [535, 0, 50.5],
+     split_to: [KAME], tag: F, hide_callout: true}
+
+  # ---- 石の外 ----
+  - {id: QA, type: pan, name: "r0 の北の皿", capacity_mL: 1500, inner_diameter_cm: 26,
+     position: [235, -175, 30], tag: "r0 北の皿", hide_callout: true}
+  - {id: QB, type: pan, name: "r0 の南の皿", capacity_mL: 1500, inner_diameter_cm: 26,
+     position: [305, -175, 30], tag: "r0 南の皿", hide_callout: true}
+  - id: R0
+    type: balance
+    name: "天秤 R0：レジスタ r0（石の南側に置く）"
+    inner_diameter_cm: 4
+    position: [270, -175, 60]
+    left: QA
+    right: QB
+    deadband_mL: 50
+    tag: "R0（r0）"
+    hide_callout: true
+  - {id: NEXT, type: basin, name: "次の命令への合図（控え）", inner_diameter_cm: 24, capacity_mL: 600,
+     position: [240, 175, 25], tag: 次の命令へ, callout: [-300, 60]}
+  - {id: W, type: basin, name: 捨て溝の受け, inner_diameter_cm: 30, capacity_mL: 3000,
+     position: [610, 80, 0], tag: 捨て溝, hide_callout: true}
+  - {id: KAME, type: basin, name: "下流（亀形石造物の方向）", inner_diameter_cm: 34, capacity_mL: 3000,
+     position: [630, 0, -10], tag: 下流へ, callout: [40, 30]}
+
+procedure:
+  - {phase: "電源", fill: A1}
+  - {phase: "電源", release: A1}
+  - {phase: "升を空ける", release: BR}
+  - {phase: "升を空ける", release: CR}
+  - {phase: "升を空ける", release: DR}
+  - {phase: "升を空ける", release: BL}
+  - {phase: "升を空ける", release: CL}
+  - {phase: "升を空ける", release: DL}
+  - {phase: "升を空ける", release: E1}
+  - {phase: "升を空ける", release: E2}
+  - {phase: "升を空ける", release: G}
+
+cases:   # inputs：皿に最初から入れておく単位数。r1 ＝ PA − PB、r0 ＝ QA − QB
+  - {id: r1p3_r0p2, inputs: {PA: 3, QA: 2}, repeat: 5, expect: {K: 0, R0: 5, NEXT: 1, KAME: 1}}
+  - {id: r1m2_r0p1, inputs: {PB: 2, QA: 1}, repeat: 4, expect: {K: 0, R0: -1, NEXT: 1, KAME: 1}}
+  - {id: r1z_r0p4, inputs: {QA: 4}, repeat: 1, expect: {K: 0, R0: 4, NEXT: 1, KAME: 1}}
+  - {id: r1p3_short, inputs: {PA: 3}, repeat: 2, expect: {K: 1, R0: 2, NEXT: 0, KAME: 0}}
+  - {id: r1p3_heavy, inputs: {PA: 7, PB: 4, QA: 3, QB: 3}, repeat: 6, expect: {K: 0, R0: 3, NEXT: 1, KAME: 1}}
+
+readout:
+  kind: named
+  inputs:
+    - {id: PA, label: "r1北"}
+    - {id: PB, label: "r1南"}
+    - {id: QA, label: "r0北"}
+  items:
+    - {id: K, label: r1}
+    - {id: R0, label: r0}
+    - {id: NEXT, label: 次へ}
+  default_case: r1p3_r0p2
+
+reset:
+  - 升・受けを空にする（皿の水は値なので残す）
+
+assumptions:
+  - id: H1
+    text: 石は土台で、くぼみの上に粘土の縁を盛り、同じ容積（1u）のすり切りの升に作り直していた。くぼみの間には粘土の堰と注ぎ口があり、B → C → D の順に溢れる
+    status: 💭 仮説（粘土は残らないので、直接の証拠は見込めない）
+  - id: H2
+    text: A の上に南北に竿を渡した天秤があり、皿は石の北と南の脇に吊られていた。竿の支柱は石の外の地面に立つ
+    status: 💭 仮説。石の周りの地面に支柱の穴があれば支持される
+  - id: H3
+    text: 指し樋は竿と一緒に振れ、重い側と反対（軽い側）へ先が向く。そのため A2・A3 の列の水は、軽い側の皿に戻る（釣り合いへ近づける負のフィードバック）
+    status: 💭（設計05の仕組み）
+  - id: H4
+    text: 東の高い所の導水（土管・石樋、石の東約40m）が、A1 の升に水を供給した
+    status: 導水遺構の存在は ✅（村上ら2017）、A1 への供給は 💭
+  - id: H5
+    text: 中央の列の水は F から西へ出て、丘の下の導水施設（亀形石造物の方向）へ流れた。下流に水が届くこと ＝ 計算の終わりの合図
+    status: 💭
+  - id: H6
+    text: 予備の升（DR・DL・G）は、もう1つのレジスタへの写しなどに使える（このモデルでは捨てている）
+    status: 💭

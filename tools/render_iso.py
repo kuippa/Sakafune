@@ -208,10 +208,51 @@ def part_height(part):
     return 5
 
 
+def stone_corners(part):
+    """石の板（type: stone）の頂点。position＝東端の中央の底、size_cm＝[長さ(x), 幅(y), 厚さ]、
+    tilt_deg＝x の向きに下る傾き（上面だけ傾ける）。"""
+    x0, y0, z0 = part["position"]
+    L, Wd, H = part["size_cm"]
+    t = math.tan(math.radians(part.get("tilt_deg", 0)))
+    top = lambda x: z0 + H - (x - x0) * t
+    return {"L": L, "W": Wd, "x0": x0, "y0": y0, "z0": z0, "top": top}
+
+
+def draw_stone(iso, part):
+    c = stone_corners(part)
+    x0, y0, z0, L, Wd, top = c["x0"], c["y0"], c["z0"], c["L"], c["W"], c["top"]
+    ya, yb = y0 - Wd / 2, y0 + Wd / 2
+    poly = lambda pts: " ".join(f"{iso.p(*q)[0]:.1f},{iso.p(*q)[1]:.1f}" for q in pts)
+    out = [
+        # 手前の側面（y が大きい側）と西端の面
+        f'<polygon points="{poly([(x0, yb, z0), (x0 + L, yb, z0), (x0 + L, yb, top(x0 + L)), (x0, yb, top(x0))])}" '
+        f'fill="#a9a59c" stroke="#6f6a60" stroke-width="1.5"/>',
+        f'<polygon points="{poly([(x0 + L, ya, z0), (x0 + L, yb, z0), (x0 + L, yb, top(x0 + L)), (x0 + L, ya, top(x0 + L))])}" '
+        f'fill="#96928a" stroke="#6f6a60" stroke-width="1.5"/>',
+        # 上面
+        f'<polygon points="{poly([(x0, ya, top(x0)), (x0 + L, ya, top(x0 + L)), (x0 + L, yb, top(x0 + L)), (x0, yb, top(x0))])}" '
+        f'fill="#cfcbc1" stroke="#6f6a60" stroke-width="1.5"/>',
+    ]
+    if part.get("tag"):
+        X, Y = iso.p(x0 + L, yb, z0)
+        out.append(text(X - 10, Y + 22, part["tag"], 14, "bold", COL["sub"], anchor="end"))
+    cx, cy = iso.p(x0 + L / 2, y0, top(x0 + L / 2))
+    return out, {"cx": cx, "top": cy, "rx": 10, "ry": 4, "bot": cy}
+
+
 def fit(model, box):
     """全部品が box=(x0,y0,x1,y1) に収まる縮尺と原点を求める。"""
     xs, ys = [], []
     for p in model["parts"]:
+        if p["type"] == "stone":
+            c = stone_corners(p)
+            for x in (c["x0"], c["x0"] + c["L"]):
+                for y in (c["y0"] - c["W"] / 2, c["y0"] + c["W"] / 2):
+                    for z in (c["z0"], c["top"](x)):
+                        X, Y = raw_point(x, y, z)
+                        xs.append(X)
+                        ys.append(Y)
+            continue
         x, y, z = p["position"]
         r = p["inner_diameter_cm"] / 2
         h = part_height(p)
@@ -656,11 +697,15 @@ def render(model, case, W=1500, H=None):
                         f"作成：{m['author']}（{m['created']}）。状態：{m['status']}", 15, fill=COL["sub"]),
            text(36, 108, m.get("caption", ""), 15, fill=COL["sub"])]
 
-    # 器（奥から手前の順に描く）
+    # 器（奥から手前の順に描く）。石の板はいちばん先に描く
     geo = {}
+    for p in model["parts"]:
+        if p["type"] == "stone":
+            shapes, geo[p["id"]] = draw_stone(iso, p)
+            svg += shapes
     for p in sorted(model["parts"], key=lambda q: q["position"][0] + q["position"][1]):
-        if p["type"] == "balance":
-            continue   # 皿を描いてから描く
+        if p["type"] in ("balance", "stone"):
+            continue   # 天秤は皿を描いてから描く
         if p["type"] == "pointer":
             shapes, g = draw_pointer(iso, p, sim.tilt(p["balance"]))
         elif p["type"] in ("sozu", "chute"):
