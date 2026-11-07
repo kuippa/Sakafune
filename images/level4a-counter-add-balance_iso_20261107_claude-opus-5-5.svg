@@ -1,0 +1,255 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1075" width="1500" height="1075" font-family="'Yu Gothic','Meiryo','Hiragino Sans','Noto Sans CJK JP',sans-serif">
+<defs>
+  <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#2f7fc8"/></marker>
+  <marker id="ahk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#6a5e4c"/></marker>
+</defs>
+<rect width="1500" height="1075" fill="#f7f2e7"/>
+<text x="36.0" y="52.0" font-size="30" font-weight="bold" fill="#3a3226" text-anchor="start">天秤で作るカウンタ機械（足し算 r0 += r1） ― 3D斜め見下ろし模式図</text>
+<text x="36.0" y="84.0" font-size="15" font-weight="normal" fill="#6a5e4c" text-anchor="start">モデル定義：design/models/level4a_counter_add_balance.yaml から自動生成。作成：claude-opus-5-5（2026-11-07）。状態：💭 設計値（未試作）</text>
+<text x="36.0" y="108.0" font-size="15" font-weight="normal" fill="#6a5e4c" text-anchor="start">レジスタは天秤（値＝左の皿−右の皿、水は足すだけ）。手番の水がある駅だけが電源の水を通す。人は毎回同じ手順をくり返すだけ。</text>
+<path d="M369.9,215.5 L369.9,254.4 A10.4,6.0 0 0 0 390.7,254.4 L390.7,215.5 A10.4,6.0 0 0 1 369.9,215.5 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="380.3" cy="215.5" rx="10.4" ry="6.0" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M369.9,215.5 L369.9,254.4 A10.4,6.0 0 0 0 390.7,254.4 L390.7,215.5 A10.4,6.0 0 0 1 369.9,215.5 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="380.3" cy="215.5" rx="10.4" ry="6.0" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="380.3" y="278.4" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">n0</text>
+<path d="M443.5,215.5 L443.5,254.4 A10.4,6.0 0 0 0 464.3,254.4 L464.3,215.5 A10.4,6.0 0 0 1 443.5,215.5 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="453.9" cy="215.5" rx="10.4" ry="6.0" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M443.5,215.5 L443.5,254.4 A10.4,6.0 0 0 0 464.3,254.4 L464.3,215.5 A10.4,6.0 0 0 1 443.5,215.5 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="453.9" cy="215.5" rx="10.4" ry="6.0" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="453.9" y="278.4" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">o0</text>
+<path d="M664.3,215.5 L664.3,254.4 A10.4,6.0 0 0 0 685.1,254.4 L685.1,215.5 A10.4,6.0 0 0 1 664.3,215.5 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="674.7" cy="215.5" rx="10.4" ry="6.0" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M664.3,215.5 L664.3,254.4 A10.4,6.0 0 0 0 685.1,254.4 L685.1,215.5 A10.4,6.0 0 0 1 664.3,215.5 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="674.7" cy="215.5" rx="10.4" ry="6.0" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="674.7" y="278.4" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">n1</text>
+<path d="M737.9,215.5 L737.9,254.4 A10.4,6.0 0 0 0 758.7,254.4 L758.7,215.5 A10.4,6.0 0 0 1 737.9,215.5 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="748.3" cy="215.5" rx="10.4" ry="6.0" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M737.9,215.5 L737.9,254.4 A10.4,6.0 0 0 0 758.7,254.4 L758.7,215.5 A10.4,6.0 0 0 1 737.9,215.5 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="748.3" cy="215.5" rx="10.4" ry="6.0" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="748.3" y="278.4" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">o1</text>
+<path d="M347.4,416.7 L347.4,449.8 A18.2,10.5 0 0 0 383.8,449.8 L383.8,416.7 A18.2,10.5 0 0 1 347.4,416.7 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="365.6" cy="416.7" rx="18.2" ry="10.5" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M347.4,416.7 L347.4,449.8 A18.2,10.5 0 0 0 383.8,449.8 L383.8,416.7 A18.2,10.5 0 0 1 347.4,416.7 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="365.6" cy="416.7" rx="18.2" ry="10.5" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="365.6" y="478.4" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">駅0</text>
+<line x1="395.0" y1="500.8" x2="395.0" y2="530.6" stroke="#6b8f2a" stroke-width="9" stroke-linecap="round" transform="rotate(0.0 395.0 500.8)"/>
+<path d="M383.0,486.8 L407.0,486.8 L399.0,500.8 L391.0,500.8 Z" fill="#c98b5a" fill-opacity="0.6" stroke="#8a5a2b" stroke-width="1.5"/>
+<circle cx="395.0" cy="500.8" r="4" fill="#4a2e12"/>
+<line x1="439.2" y1="500.8" x2="439.2" y2="530.6" stroke="#6b8f2a" stroke-width="9" stroke-linecap="round" transform="rotate(0.0 439.2 500.8)"/>
+<path d="M427.2,486.8 L451.2,486.8 L443.2,500.8 L435.2,500.8 Z" fill="#c98b5a" fill-opacity="0.6" stroke="#8a5a2b" stroke-width="1.5"/>
+<circle cx="439.2" cy="500.8" r="4" fill="#4a2e12"/>
+<path d="M641.8,416.7 L641.8,449.8 A18.2,10.5 0 0 0 678.2,449.8 L678.2,416.7 A18.2,10.5 0 0 1 641.8,416.7 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="660.0" cy="416.7" rx="18.2" ry="10.5" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M641.8,416.7 L641.8,449.8 A18.2,10.5 0 0 0 678.2,449.8 L678.2,416.7 A18.2,10.5 0 0 1 641.8,416.7 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="660.0" cy="416.7" rx="18.2" ry="10.5" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="660.0" y="478.4" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">駅1</text>
+<line x1="689.4" y1="500.8" x2="689.4" y2="530.6" stroke="#6b8f2a" stroke-width="9" stroke-linecap="round" transform="rotate(0.0 689.4 500.8)"/>
+<path d="M677.4,486.8 L701.4,486.8 L693.4,500.8 L685.4,500.8 Z" fill="#c98b5a" fill-opacity="0.6" stroke="#8a5a2b" stroke-width="1.5"/>
+<circle cx="689.4" cy="500.8" r="4" fill="#4a2e12"/>
+<line x1="733.6" y1="500.8" x2="733.6" y2="530.6" stroke="#6b8f2a" stroke-width="9" stroke-linecap="round" transform="rotate(0.0 733.6 500.8)"/>
+<path d="M721.6,486.8 L745.6,486.8 L737.6,500.8 L729.6,500.8 Z" fill="#c98b5a" fill-opacity="0.6" stroke="#8a5a2b" stroke-width="1.5"/>
+<circle cx="733.6" cy="500.8" r="4" fill="#4a2e12"/>
+<path d="M906.7,416.7 L906.7,449.8 A18.2,10.5 0 0 0 943.2,449.8 L943.2,416.7 A18.2,10.5 0 0 1 906.7,416.7 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="925.0" cy="416.7" rx="18.2" ry="10.5" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M907.3,438.8 L907.3,449.8 A17.7,10.2 0 0 0 942.6,449.8 L942.6,438.8 A17.7,10.2 0 0 1 907.3,438.8 Z" fill="#3d8fd6" fill-opacity="0.75"/>
+<ellipse cx="925.0" cy="438.8" rx="17.7" ry="10.2" fill="#8fc3ec"/>
+<path d="M906.7,416.7 L906.7,449.8 A18.2,10.5 0 0 0 943.2,449.8 L943.2,416.7 A18.2,10.5 0 0 1 906.7,416.7 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="925.0" cy="416.7" rx="18.2" ry="10.5" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="925.0" y="478.4" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">停止</text>
+<path d="M276.4,625.7 L276.4,670.8 A15.6,9.0 0 0 0 307.6,670.8 L307.6,625.7 A15.6,9.0 0 0 1 276.4,625.7 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="292.0" cy="625.7" rx="15.6" ry="9.0" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M276.4,625.7 L276.4,670.8 A15.6,9.0 0 0 0 307.6,670.8 L307.6,625.7 A15.6,9.0 0 0 1 276.4,625.7 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="292.0" cy="625.7" rx="15.6" ry="9.0" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="292.0" y="697.8" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">控え0</text>
+<path d="M570.8,625.7 L570.8,670.8 A15.6,9.0 0 0 0 602.0,670.8 L602.0,625.7 A15.6,9.0 0 0 1 570.8,625.7 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="586.4" cy="625.7" rx="15.6" ry="9.0" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M570.8,625.7 L570.8,670.8 A15.6,9.0 0 0 0 602.0,670.8 L602.0,625.7 A15.6,9.0 0 0 1 570.8,625.7 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="586.4" cy="625.7" rx="15.6" ry="9.0" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="586.4" y="697.8" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">控え1</text>
+<path d="M865.2,625.7 L865.2,670.8 A15.6,9.0 0 0 0 896.4,670.8 L896.4,625.7 A15.6,9.0 0 0 1 865.2,625.7 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="880.8" cy="625.7" rx="15.6" ry="9.0" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M865.2,625.7 L865.2,670.8 A15.6,9.0 0 0 0 896.4,670.8 L896.4,625.7 A15.6,9.0 0 0 1 865.2,625.7 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="880.8" cy="625.7" rx="15.6" ry="9.0" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="880.8" y="697.8" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">控え2</text>
+<path d="M344.8,790.1 L344.8,849.3 A20.8,12.0 0 0 0 386.4,849.3 L386.4,790.1 A20.8,12.0 0 0 1 344.8,790.1 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="365.6" cy="790.1" rx="20.8" ry="12.0" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M345.4,823.9 L345.4,849.3 A20.2,11.7 0 0 0 385.8,849.3 L385.8,823.9 A20.2,11.7 0 0 1 345.4,823.9 Z" fill="#3d8fd6" fill-opacity="0.75"/>
+<ellipse cx="365.6" cy="823.9" rx="20.2" ry="11.7" fill="#8fc3ec"/>
+<path d="M344.8,790.1 L344.8,849.3 A20.8,12.0 0 0 0 386.4,849.3 L386.4,790.1 A20.8,12.0 0 0 1 344.8,790.1 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="365.6" cy="790.1" rx="20.8" ry="12.0" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="365.6" y="879.3" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">A1</text>
+<path d="M447.8,790.1 L447.8,849.3 A20.8,12.0 0 0 0 489.5,849.3 L489.5,790.1 A20.8,12.0 0 0 1 447.8,790.1 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="468.6" cy="790.1" rx="20.8" ry="12.0" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M448.4,823.9 L448.4,849.3 A20.2,11.7 0 0 0 488.8,849.3 L488.8,823.9 A20.2,11.7 0 0 1 448.4,823.9 Z" fill="#3d8fd6" fill-opacity="0.75"/>
+<ellipse cx="468.6" cy="823.9" rx="20.2" ry="11.7" fill="#8fc3ec"/>
+<path d="M447.8,790.1 L447.8,849.3 A20.8,12.0 0 0 0 489.5,849.3 L489.5,790.1 A20.8,12.0 0 0 1 447.8,790.1 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="468.6" cy="790.1" rx="20.8" ry="12.0" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="468.6" y="879.3" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">B1</text>
+<line x1="395.0" y1="891.8" x2="395.0" y2="921.5" stroke="#6b8f2a" stroke-width="9" stroke-linecap="round" transform="rotate(21.6 395.0 891.8)"/>
+<path d="M383.0,877.8 L407.0,877.8 L399.0,891.8 L391.0,891.8 Z" fill="#c98b5a" fill-opacity="0.6" stroke="#8a5a2b" stroke-width="1.5"/>
+<circle cx="395.0" cy="891.8" r="4" fill="#4a2e12"/>
+<line x1="439.2" y1="891.8" x2="439.2" y2="921.5" stroke="#6b8f2a" stroke-width="9" stroke-linecap="round" transform="rotate(21.6 439.2 891.8)"/>
+<path d="M427.2,877.8 L451.2,877.8 L443.2,891.8 L435.2,891.8 Z" fill="#c98b5a" fill-opacity="0.6" stroke="#8a5a2b" stroke-width="1.5"/>
+<circle cx="439.2" cy="891.8" r="4" fill="#4a2e12"/>
+<path d="M727.5,790.1 L727.5,849.3 A20.8,12.0 0 0 0 769.1,849.3 L769.1,790.1 A20.8,12.0 0 0 1 727.5,790.1 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="748.3" cy="790.1" rx="20.8" ry="12.0" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M728.1,807.0 L728.1,849.3 A20.2,11.7 0 0 0 768.5,849.3 L768.5,807.0 A20.2,11.7 0 0 1 728.1,807.0 Z" fill="#3d8fd6" fill-opacity="0.75"/>
+<ellipse cx="748.3" cy="807.0" rx="20.2" ry="11.7" fill="#8fc3ec"/>
+<path d="M727.5,790.1 L727.5,849.3 A20.8,12.0 0 0 0 769.1,849.3 L769.1,790.1 A20.8,12.0 0 0 1 727.5,790.1 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="748.3" cy="790.1" rx="20.8" ry="12.0" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="748.3" y="879.3" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">A0</text>
+<path d="M830.5,790.1 L830.5,849.3 A20.8,12.0 0 0 0 872.2,849.3 L872.2,790.1 A20.8,12.0 0 0 1 830.5,790.1 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="851.4" cy="790.1" rx="20.8" ry="12.0" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M830.5,790.1 L830.5,849.3 A20.8,12.0 0 0 0 872.2,849.3 L872.2,790.1 A20.8,12.0 0 0 1 830.5,790.1 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="851.4" cy="790.1" rx="20.8" ry="12.0" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="851.4" y="879.3" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">B0</text>
+<path d="M987.3,887.1 L987.3,968.3 A26.0,15.0 0 0 0 1039.3,968.3 L1039.3,887.1 A26.0,15.0 0 0 1 987.3,887.1 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="1013.3" cy="887.1" rx="26.0" ry="15.0" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M988.0,887.1 L988.0,968.3 A25.2,14.6 0 0 0 1038.5,968.3 L1038.5,887.1 A25.2,14.6 0 0 1 988.0,887.1 Z" fill="#3d8fd6" fill-opacity="0.75"/>
+<ellipse cx="1013.3" cy="887.1" rx="25.2" ry="14.6" fill="#8fc3ec"/>
+<path d="M987.3,887.1 L987.3,968.3 A26.0,15.0 0 0 0 1039.3,968.3 L1039.3,887.1 A26.0,15.0 0 0 1 987.3,887.1 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="1013.3" cy="887.1" rx="26.0" ry="15.0" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="1013.3" y="1001.3" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">捨て溝</text>
+<line x1="417.1" y1="381.9" x2="417.1" y2="347.9" stroke="#8a5a2b" stroke-width="6"/>
+<line x1="365.6" y1="347.9" x2="468.6" y2="347.9" stroke="#5a3a1a" stroke-width="5" stroke-linecap="round"/>
+<line x1="365.6" y1="347.9" x2="351.0" y2="416.7" stroke="#6a5e4c" stroke-width="1.2"/>
+<line x1="365.6" y1="347.9" x2="380.2" y2="416.7" stroke="#6a5e4c" stroke-width="1.2"/>
+<circle cx="417.1" cy="347.9" r="5" fill="#4a2e12"/>
+<text x="417.1" y="335.9" font-size="13" font-weight="bold" fill="#c0392b" text-anchor="middle">釣り合い</text>
+<text x="417.1" y="317.9" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">門0</text>
+<line x1="711.5" y1="381.9" x2="711.5" y2="347.9" stroke="#8a5a2b" stroke-width="6"/>
+<line x1="660.0" y1="347.9" x2="763.0" y2="347.9" stroke="#5a3a1a" stroke-width="5" stroke-linecap="round"/>
+<line x1="660.0" y1="347.9" x2="645.4" y2="416.7" stroke="#6a5e4c" stroke-width="1.2"/>
+<line x1="660.0" y1="347.9" x2="674.6" y2="416.7" stroke="#6a5e4c" stroke-width="1.2"/>
+<circle cx="711.5" cy="347.9" r="5" fill="#4a2e12"/>
+<text x="711.5" y="335.9" font-size="13" font-weight="bold" fill="#c0392b" text-anchor="middle">釣り合い</text>
+<text x="711.5" y="317.9" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">門1</text>
+<line x1="417.1" y1="772.8" x2="417.1" y2="738.8" stroke="#8a5a2b" stroke-width="6"/>
+<line x1="366.7" y1="728.1" x2="467.5" y2="749.5" stroke="#5a3a1a" stroke-width="5" stroke-linecap="round"/>
+<line x1="366.7" y1="728.1" x2="348.9" y2="790.1" stroke="#6a5e4c" stroke-width="1.2"/>
+<line x1="366.7" y1="728.1" x2="382.3" y2="790.1" stroke="#6a5e4c" stroke-width="1.2"/>
+<line x1="467.5" y1="749.5" x2="452.0" y2="790.1" stroke="#6a5e4c" stroke-width="1.2"/>
+<line x1="467.5" y1="749.5" x2="485.3" y2="790.1" stroke="#6a5e4c" stroke-width="1.2"/>
+<line x1="467.5" y1="749.5" x2="467.5" y2="775.5" stroke="#6a5e4c" stroke-width="1.2"/>
+<rect x="454.5" y="775.5" width="26" height="20" rx="3" fill="#6f6a60" stroke="#2f2b25"/>
+<text x="467.5" y="813.5" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="middle">おもり 0.5u</text>
+<circle cx="417.1" cy="738.8" r="5" fill="#4a2e12"/>
+<text x="417.1" y="726.8" font-size="13" font-weight="bold" fill="#c0392b" text-anchor="middle">右が重い</text>
+<text x="417.1" y="708.8" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">r1</text>
+<line x1="799.8" y1="772.8" x2="799.8" y2="738.8" stroke="#8a5a2b" stroke-width="6"/>
+<line x1="749.4" y1="749.5" x2="850.2" y2="728.1" stroke="#5a3a1a" stroke-width="5" stroke-linecap="round"/>
+<line x1="749.4" y1="749.5" x2="731.7" y2="790.1" stroke="#6a5e4c" stroke-width="1.2"/>
+<line x1="749.4" y1="749.5" x2="765.0" y2="790.1" stroke="#6a5e4c" stroke-width="1.2"/>
+<line x1="850.2" y1="728.1" x2="834.7" y2="790.1" stroke="#6a5e4c" stroke-width="1.2"/>
+<line x1="850.2" y1="728.1" x2="868.0" y2="790.1" stroke="#6a5e4c" stroke-width="1.2"/>
+<line x1="850.2" y1="728.1" x2="850.2" y2="754.1" stroke="#6a5e4c" stroke-width="1.2"/>
+<rect x="837.2" y="754.1" width="26" height="20" rx="3" fill="#6f6a60" stroke="#2f2b25"/>
+<text x="850.2" y="792.1" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="middle">おもり 0.5u</text>
+<circle cx="799.8" cy="738.8" r="5" fill="#4a2e12"/>
+<text x="799.8" y="726.8" font-size="13" font-weight="bold" fill="#c0392b" text-anchor="middle">左が重い</text>
+<text x="799.8" y="708.8" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">r0</text>
+<path d="M390.7,215.5 Q412.9,185.5 395.0,488.1" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M464.3,215.5 Q471.8,185.5 439.2,488.1" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M685.1,215.5 Q707.3,185.5 689.4,488.1" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M758.7,215.5 Q766.2,185.5 733.6,488.1" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M375.6,455.6 Q385.6,874.4 1013.3,874.4" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M395.0,530.6 Q395.0,530.6 395.0,879.0" fill="none" stroke="#6a5e4c" stroke-width="1.5" stroke-dasharray="4 5" stroke-opacity="0.6" marker-end="url(#ahk)"/>
+<text x="395.0" y="700.8" font-size="11" font-weight="bold" fill="#6a5e4c" text-anchor="middle">左が重い</text>
+<path d="M395.0,530.6 Q704.2,530.6 1013.3,874.4" fill="none" stroke="#2f7fc8" stroke-width="3" stroke-dasharray="none" stroke-opacity="1" marker-end="url(#ah)"/>
+<text x="704.2" y="698.5" font-size="11" font-weight="bold" fill="#2f7fc8" text-anchor="middle">釣り合い</text>
+<path d="M439.2,530.6 Q439.2,530.6 439.2,879.0" fill="none" stroke="#6a5e4c" stroke-width="1.5" stroke-dasharray="4 5" stroke-opacity="0.6" marker-end="url(#ahk)"/>
+<text x="439.2" y="700.8" font-size="11" font-weight="bold" fill="#6a5e4c" text-anchor="middle">左が重い</text>
+<path d="M439.2,530.6 Q726.2,530.6 1013.3,874.4" fill="none" stroke="#2f7fc8" stroke-width="3" stroke-dasharray="none" stroke-opacity="1" marker-end="url(#ah)"/>
+<text x="726.2" y="698.5" font-size="11" font-weight="bold" fill="#2f7fc8" text-anchor="middle">釣り合い</text>
+<path d="M670.0,455.6 Q680.0,874.4 1013.3,874.4" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M689.4,530.6 Q490.7,530.6 292.0,613.0" fill="none" stroke="#6a5e4c" stroke-width="1.5" stroke-dasharray="4 5" stroke-opacity="0.6" marker-end="url(#ahk)"/>
+<text x="490.7" y="567.8" font-size="11" font-weight="bold" fill="#6a5e4c" text-anchor="middle">左が重い</text>
+<path d="M689.4,530.6 Q851.4,530.6 1013.3,874.4" fill="none" stroke="#2f7fc8" stroke-width="3" stroke-dasharray="none" stroke-opacity="1" marker-end="url(#ah)"/>
+<text x="851.4" y="698.5" font-size="11" font-weight="bold" fill="#2f7fc8" text-anchor="middle">釣り合い</text>
+<path d="M733.6,530.6 Q741.0,530.6 748.3,777.4" fill="none" stroke="#6a5e4c" stroke-width="1.5" stroke-dasharray="4 5" stroke-opacity="0.6" marker-end="url(#ahk)"/>
+<text x="741.0" y="650.0" font-size="11" font-weight="bold" fill="#6a5e4c" text-anchor="middle">左が重い</text>
+<path d="M733.6,530.6 Q873.4,530.6 1013.3,874.4" fill="none" stroke="#2f7fc8" stroke-width="3" stroke-dasharray="none" stroke-opacity="1" marker-end="url(#ah)"/>
+<text x="873.4" y="698.5" font-size="11" font-weight="bold" fill="#2f7fc8" text-anchor="middle">釣り合い</text>
+<path d="M300.6,675.8 Q310.6,404.0 365.6,404.0" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M595.0,675.8 Q605.0,404.0 660.0,404.0" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M889.4,675.8 Q899.4,404.0 925.0,404.0" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M384.1,919.4 Q485.2,919.4 586.4,613.0" fill="none" stroke="#6a5e4c" stroke-width="1.5" stroke-dasharray="4 5" stroke-opacity="0.6" marker-end="url(#ahk)"/>
+<text x="485.2" y="762.2" font-size="11" font-weight="bold" fill="#6a5e4c" text-anchor="middle">左が重い</text>
+<path d="M384.1,919.4 Q632.4,919.4 880.8,613.0" fill="none" stroke="#2f7fc8" stroke-width="3" stroke-dasharray="none" stroke-opacity="1" marker-end="url(#ah)"/>
+<text x="632.4" y="762.2" font-size="11" font-weight="bold" fill="#2f7fc8" text-anchor="middle">右が重い</text>
+<path d="M428.3,919.4 Q448.4,919.4 468.6,777.4" fill="none" stroke="#6a5e4c" stroke-width="1.5" stroke-dasharray="4 5" stroke-opacity="0.6" marker-end="url(#ahk)"/>
+<text x="448.4" y="844.4" font-size="11" font-weight="bold" fill="#6a5e4c" text-anchor="middle">左が重い</text>
+<path d="M428.3,919.4 Q720.8,919.4 1013.3,874.4" fill="none" stroke="#2f7fc8" stroke-width="3" stroke-dasharray="none" stroke-opacity="1" marker-end="url(#ah)"/>
+<text x="720.8" y="892.9" font-size="11" font-weight="bold" fill="#2f7fc8" text-anchor="middle">右が重い</text>
+<line x1="395.0" y1="486.8" x2="417.1" y2="347.9" stroke="#4a2e12" stroke-width="2" stroke-dasharray="2 4"/>
+<line x1="439.2" y1="486.8" x2="417.1" y2="347.9" stroke="#4a2e12" stroke-width="2" stroke-dasharray="2 4"/>
+<line x1="689.4" y1="486.8" x2="711.5" y2="347.9" stroke="#4a2e12" stroke-width="2" stroke-dasharray="2 4"/>
+<line x1="733.6" y1="486.8" x2="711.5" y2="347.9" stroke="#4a2e12" stroke-width="2" stroke-dasharray="2 4"/>
+<line x1="384.1" y1="877.8" x2="417.1" y2="738.8" stroke="#4a2e12" stroke-width="2" stroke-dasharray="2 4"/>
+<line x1="428.3" y1="877.8" x2="417.1" y2="738.8" stroke="#4a2e12" stroke-width="2" stroke-dasharray="2 4"/>
+<line x1="797.9" y1="228.4" x2="741.0" y2="254.4" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="797.9" y="184.4" width="214" height="88.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="807.9" y="208.4" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">O1：駅1 の電源水（操作）</text>
+<text x="807.9" y="226.4" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">電源の水は、毎回すべての駅に注ぐ</text>
+<text x="807.9" y="244.4" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">手番のない駅では捨て溝へ流れる</text>
+<text x="807.9" y="262.4" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：空 → 0</text>
+<line x1="360.0" y1="344.9" x2="381.1" y2="381.9" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="35.6" y="256.9" width="324" height="88.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="45.6" y="280.9" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">G0：駅0 の門：JZDEC r1</text>
+<text x="45.6" y="298.9" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">重さの差が ±0.5u 未満なら釣り合い</text>
+<text x="45.6" y="316.9" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">手番の水があれば傾き、電源の水を r1 の指し樋へ通す</text>
+<text x="45.6" y="334.9" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：釣り合い</text>
+<line x1="946.7" y1="444.8" x2="912.2" y2="449.8" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="946.7" y="409.8" width="165" height="70.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="956.7" y="433.8" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">T2：駅2 の皿（停止）</text>
+<text x="956.7" y="451.8" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">手番の水が来たら止まる</text>
+<text x="956.7" y="469.8" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：水あり（1u）→ 1</text>
+<line x1="365.0" y1="832.8" x2="381.1" y2="772.8" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="115.6" y="832.8" width="249" height="88.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="125.6" y="856.8" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">R1：レジスタ r1（値 ＝ A − B）</text>
+<text x="125.6" y="874.8" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">INC は A に、DEC は B に 1u 足す</text>
+<text x="125.6" y="892.8" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">右におもり 0.5u：値 ≥ 1 なら左が重い</text>
+<text x="125.6" y="910.8" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：右が重い</text>
+<line x1="526.3" y1="929.4" x2="419.9" y2="919.4" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="526.3" y="929.4" width="237" height="106.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="536.3" y="953.4" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">X1o：r1 の指し樋（DEC）</text>
+<text x="536.3" y="971.4" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">左が重い → B1</text>
+<text x="536.3" y="989.4" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">右が重い → W</text>
+<text x="536.3" y="1007.4" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">次の手番：値 ≥ 1 → 駅1、0 → 停止</text>
+<text x="536.3" y="1025.4" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">操作：値 ≥ 1 なら B に 1u（DEC）</text>
+<rect x="1100" y="140" width="364" height="150" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="1116.0" y="170.0" font-size="17" font-weight="bold" fill="#3a3226" text-anchor="start">図の状態：case x2y3 の後</text>
+<text x="1116.0" y="206.0" font-size="16" font-weight="normal" fill="#3a3226" text-anchor="start">入力：r0=2　r1=3</text>
+<text x="1116.0" y="240.0" font-size="20" font-weight="bold" fill="#2f7fc8" text-anchor="start">出力：r0=5　r1=0　停止=1</text>
+<text x="1116.0" y="274.0" font-size="13" font-weight="normal" fill="#6a5e4c" text-anchor="start">水が残っている器＝1、空の器＝0</text>
+<rect x="1100" y="305" width="364" height="300" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="1116.0" y="331.0" font-size="15" font-weight="bold" fill="#3a3226" text-anchor="start">人の操作（判断なし・この順に）</text>
+<text x="1116.0" y="355.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">1. ①次の手番：N0 を満たす</text>
+<text x="1116.0" y="375.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">2. ①次の手番：N0 を注ぐ（栓を抜く）</text>
+<text x="1116.0" y="395.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">3. ①次の手番：N1 を満たす</text>
+<text x="1116.0" y="415.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">4. ①次の手番：N1 を注ぐ（栓を抜く）</text>
+<text x="1116.0" y="435.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">5. ②操作：O0 を満たす</text>
+<text x="1116.0" y="455.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">6. ②操作：O0 を注ぐ（栓を抜く）</text>
+<text x="1116.0" y="475.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">7. ②操作：O1 を満たす</text>
+<text x="1116.0" y="495.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">8. ②操作：O1 を注ぐ（栓を抜く）</text>
+<text x="1116.0" y="515.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">9. ③皿を空ける：T0 を注ぐ（栓を抜く）</text>
+<text x="1116.0" y="535.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">10. ③皿を空ける：T1 を注ぐ（栓を抜く）</text>
+<text x="1116.0" y="555.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">11. ④控えを移す：S0 を注ぐ（栓を抜く）</text>
+<text x="1116.0" y="575.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">12. ④控えを移す：S1 を注ぐ（栓を抜く）</text>
+<text x="1116.0" y="595.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">13. ④控えを移す：S2 を注ぐ（栓を抜く）</text>
+<rect x="1100" y="620" width="364" height="140" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="1116.0" y="646.0" font-size="15" font-weight="bold" fill="#3a3226" text-anchor="start">凡例</text>
+<rect x="1116" y="658" width="26" height="14" fill="#c98b5a" fill-opacity="0.4" stroke="#7a4a26"/>
+<text x="1152.0" y="670.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">土器の器</text>
+<rect x="1290" y="658" width="10" height="13" rx="2" fill="#8a5a2b"/>
+<text x="1310.0" y="670.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">木の栓</text>
+<rect x="1116" y="682" width="26" height="8" fill="#6b8f2a"/>
+<text x="1152.0" y="691.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">竹の管（サイフォン）</text>
+<line x1="1116" y1="710" x2="1142" y2="710" stroke="#c0392b" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="1152.0" y="715.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">しきい値・穴の高さ</text>
+<line x1="1116" y1="736" x2="1142" y2="736" stroke="#2f7fc8" stroke-width="3" marker-end="url(#ah)"/>
+<text x="1152.0" y="741.0" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">水の流れ（緑の管＝サイフォン、茶の点線＝栓・注ぎ）</text>
+<text x="1480.0" y="1057.0" font-size="12" font-weight="normal" fill="#6a5e4c" text-anchor="end">寸法は設計値（未試作）。❓の前提は YAML の assumptions を参照</text>
+</svg>

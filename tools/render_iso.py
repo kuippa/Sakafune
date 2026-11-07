@@ -144,8 +144,11 @@ class Sim:
 
 def run_case(model, case):
     sim = Sim(model)
+    u = model["units"]["u_mL"]
     for pid, on in (case.get("inputs") or {}).items():
-        if on:
+        if sim.parts[pid]["type"] in ("pan", "basin"):
+            sim.vol[pid] = on * u          # 皿・受けには、最初から on 単位の水を入れておく（カウンタの初期値など）
+        elif on:
             sim.do({"fill": pid})
     for _ in range(case.get("repeat", 1)):
         for step in model["procedure"]:
@@ -153,11 +156,22 @@ def run_case(model, case):
     return sim
 
 
+def value_of(model, vol, pid):
+    """出力の読み方。天秤なら「左の皿 − 右の皿」の単位数（カウンタの値）、それ以外は水があれば 1。"""
+    part = next(p for p in model["parts"] if p["id"] == pid)
+    if part["type"] == "balance":
+        u = model["units"]["u_mL"]
+        left = vol[part["left"]] if part.get("left") else 0.0
+        right = vol[part["right"]] if part.get("right") else 0.0
+        return round((left - right) / u)
+    return int(vol[pid] > 1e-9)
+
+
 def check_cases(model):
     results = []
     for case in model.get("cases", []):
         vol = run_case(model, case).vol
-        got = {k: int(vol[k] > 1e-9) for k in case["expect"]}
+        got = {k: value_of(model, vol, k) for k in case["expect"]}
         results.append((case["id"], case["expect"], got, got == case["expect"]))
     return results
 
@@ -490,8 +504,8 @@ def callout_lines(part, vol_ml, u, inputs, sim=None):
     if part["type"] in ("splitter", "tipping_bucket", "vane", "chute"):
         return lines
     if part["id"] in inputs:
-        v = int(bool(inputs[part["id"]]))
-        amt = f"{part.get('volume_mL', u) / u:g}u 満たして注いだ"
+        v = inputs[part["id"]] if part["type"] in ("pan", "basin") else int(bool(inputs[part["id"]]))
+        amt = f"{part.get('volume_mL', u) / u:g}u 満たして注いだ" if part["type"] == "metering_cup" else f"最初に {v}u 入れておく"
         lines.append((f"入力値：{v}（{amt if v else '空のまま'}）", 12, "bold"))
         return lines
     state = f"水あり（{vol_ml / u:g}u）→ 1" if vol_ml > 1e-9 else "空 → 0"
@@ -548,9 +562,11 @@ def readout_panel(model, case, vol, x, y):
                 text(x + 16, y + 108, f"＝ 2進数 {bits} ＝ {int(bits, 2)}", 16)]
     else:
         title = f"図の状態：case {case['id']} の後"
-        ins = "　".join(f"{i['label']}={int(bool((case.get('inputs') or {}).get(i['id'])))}"
+        cin = case.get("inputs") or {}
+        kinds = {p["id"]: p["type"] for p in model["parts"]}
+        ins = "　".join(f"{i['label']}={cin.get(i['id'], 0) if kinds[i['id']] in ('pan', 'basin') else int(bool(cin.get(i['id'])))}"
                        for i in ro.get("inputs", []))
-        outs = "　".join(f"{i['label']}={int(vol[i['id']] > 1e-9)}" for i in ro["items"])
+        outs = "　".join(f"{i['label']}={value_of(model, vol, i['id'])}" for i in ro["items"])
         out += [text(x + 16, y + 66, f"入力：{ins}", 16),
                 text(x + 16, y + 100, f"出力：{outs}", 20, "bold", COL["flow"])]
     out = [f'<rect x="{x}" y="{y}" width="364" height="150" rx="8" fill="{COL["panel"]}" '

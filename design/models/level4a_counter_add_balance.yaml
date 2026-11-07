@@ -1,0 +1,191 @@
+# レベル4a：天秤で作るカウンタ機械（足し算 r0 += r1）のモデル定義
+# このファイルが正本。書き方は SCHEMA.md を参照。
+# 状態の記号：✅確認済み / 💭推論・設計値 / ❓要確認（試作・調査で確かめる）
+#
+# 考え方（design/07_counter-machine.md）：
+#   レジスタ ＝ 天秤1本。値 n ＝ 左の皿 A − 右の皿 B。右におもり 0.5u。水は足すだけ。
+#     INC ＝ A に 1u 足す。DEC ＝ B に 1u 足す。n ≥ 1 なら左が重い、n = 0 なら右が重い。
+#   命令 ＝ 駅。駅の皿にある「手番の水」1u が、いまどの命令かを表す。
+#   駅の天秤（門）は手番があるときだけ傾き、電源の水を通す。
+#   プログラム：
+#     駅0：JZDEC r1 → r1 が 0 なら駅2（停止）、そうでなければ r1 を 1 減らして駅1へ
+#     駅1：INC r0 → 駅0へ
+#     駅2：HALT
+#   1回の手順（毎回同じ。判断なし）：①次の手番の電源水 → ②操作の電源水 → ③駅の皿を空ける → ④控えを駅の皿へ
+
+meta:
+  id: level4a_counter_add_balance
+  title: 天秤で作るカウンタ機械（足し算 r0 += r1）
+  design_doc: ../07_counter-machine.md
+  author: claude-opus-5-5
+  created: 2026-11-07
+  status: 💭 設計値（未試作）
+  caption: レジスタは天秤（値＝左の皿−右の皿、水は足すだけ）。手番の水がある駅だけが電源の水を通す。人は毎回同じ手順をくり返すだけ。
+
+layout:
+  fit_box: [260, 190, 1060, -60]
+
+units:
+  length: cm
+  volume: mL
+  u_mL: 100
+
+parts:
+  # ---- 電源の水（毎回、全部の駅に同じように注ぐ） ----
+  - {id: N0, type: metering_cup, name: 駅0 の電源水（次の手番）, volume_mL: 100, inner_diameter_cm: 4,
+     position: [-38, 38, 128], drain_to: P0n, tag: n0, hide_callout: true}
+  - {id: O0, type: metering_cup, name: 駅0 の電源水（操作）, volume_mL: 100, inner_diameter_cm: 4,
+     position: [-28, 28, 128], drain_to: P0o, tag: o0, hide_callout: true}
+  - {id: N1, type: metering_cup, name: 駅1 の電源水（次の手番）, volume_mL: 100, inner_diameter_cm: 4,
+     position: [2, -2, 128], drain_to: P1n, tag: n1, hide_callout: true}
+  - id: O1
+    type: metering_cup
+    name: 駅1 の電源水（操作）
+    volume_mL: 100
+    inner_diameter_cm: 4
+    position: [12, -12, 128]
+    drain_to: P1o
+    tag: o1
+    notes: ["電源の水は、毎回すべての駅に注ぐ", "手番のない駅では捨て溝へ流れる"]
+    callout: [60, -70]
+
+  # ---- 駅0：JZDEC r1 ----
+  - {id: T0, type: pan, name: 駅0 の皿（手番の水）, capacity_mL: 300, inner_diameter_cm: 7,
+     position: [-40, 40, 82], drain_to: W, tag: 駅0, hide_callout: true}
+  - id: G0
+    type: balance
+    name: "駅0 の門：JZDEC r1"
+    inner_diameter_cm: 4
+    position: [-33, 33, 98]
+    left: T0
+    deadband_mL: 50
+    tag: 門0
+    notes: ["手番の水があれば傾き、電源の水を r1 の指し樋へ通す"]
+    callout: [-330, -125]
+  - {id: P0n, type: pointer, name: 駅0 の指し樋（次の手番）, inner_diameter_cm: 3, position: [-36, 36, 62],
+     balance: G0, route_to: {left_heavy: X1n, level: W}, tag: "", hide_callout: true}
+  - {id: P0o, type: pointer, name: 駅0 の指し樋（操作）, inner_diameter_cm: 3, position: [-30, 30, 62],
+     balance: G0, route_to: {left_heavy: X1o, level: W}, tag: "", hide_callout: true}
+
+  # ---- 駅1：INC r0 ----
+  - {id: T1, type: pan, name: 駅1 の皿（手番の水）, capacity_mL: 300, inner_diameter_cm: 7,
+     position: [0, 0, 82], drain_to: W, tag: 駅1, hide_callout: true}
+  - id: G1
+    type: balance
+    name: "駅1 の門：INC r0"
+    inner_diameter_cm: 4
+    position: [7, -7, 98]
+    left: T1
+    deadband_mL: 50
+    tag: 門1
+    hide_callout: true
+  - {id: P1n, type: pointer, name: 駅1 の指し樋（次の手番）, inner_diameter_cm: 3, position: [4, -4, 62],
+     balance: G1, route_to: {left_heavy: S0, level: W}, tag: "", hide_callout: true}
+  - {id: P1o, type: pointer, name: 駅1 の指し樋（操作）, inner_diameter_cm: 3, position: [10, -10, 62],
+     balance: G1, route_to: {left_heavy: A0, level: W}, tag: "", hide_callout: true}
+
+  # ---- 駅2：HALT ----
+  - {id: T2, type: pan, name: 駅2 の皿（停止）, capacity_mL: 300, inner_diameter_cm: 7,
+     position: [36, -36, 82], tag: 停止, callout: [40, -40], notes: ["手番の水が来たら止まる"]}
+
+  # ---- 控え（次の手番。④で駅の皿へ移す） ----
+  - {id: S0, type: basin, name: 控え0, capacity_mL: 300, inner_diameter_cm: 6,
+     position: [-50, 50, 30], drain_to: T0, tag: 控え0, hide_callout: true}
+  - {id: S1, type: basin, name: 控え1, capacity_mL: 300, inner_diameter_cm: 6,
+     position: [-10, 10, 30], drain_to: T1, tag: 控え1, hide_callout: true}
+  - {id: S2, type: basin, name: 控え2, capacity_mL: 300, inner_diameter_cm: 6,
+     position: [30, -30, 30], drain_to: T2, tag: 控え2, hide_callout: true}
+
+  # ---- レジスタ r1（駅0 が使う） ----
+  - {id: A1, type: pan, name: r1 の左の皿 A, capacity_mL: 700, inner_diameter_cm: 8,
+     position: [-40, 40, -12], tag: A1, hide_callout: true}
+  - {id: B1, type: pan, name: r1 の右の皿 B, capacity_mL: 700, inner_diameter_cm: 8,
+     position: [-26, 26, -12], tag: B1, hide_callout: true}
+  - id: R1
+    type: balance
+    name: "レジスタ r1（値 ＝ A − B）"
+    inner_diameter_cm: 4
+    position: [-33, 33, 6]
+    left: A1
+    right: B1
+    counterweight_mL: [0, 50]
+    tag: r1
+    notes: ["INC は A に、DEC は B に 1u 足す", "右におもり 0.5u：値 ≥ 1 なら左が重い"]
+    callout: [-250, 60]
+  - {id: X1n, type: pointer, name: r1 の指し樋（次の手番を決める）, inner_diameter_cm: 3, position: [-36, 36, -30],
+     balance: R1, route_to: {left_heavy: S1, right_heavy: S2}, tag: "", hide_callout: true}
+  - id: X1o
+    type: pointer
+    name: r1 の指し樋（DEC）
+    inner_diameter_cm: 3
+    position: [-30, 30, -30]
+    balance: R1
+    route_to: {left_heavy: B1, right_heavy: W}
+    tag: ""
+    notes: ["次の手番：値 ≥ 1 → 駅1、0 → 停止", "操作：値 ≥ 1 なら B に 1u（DEC）"]
+    callout: [110, 10]
+
+  # ---- レジスタ r0 ----
+  - {id: A0, type: pan, name: r0 の左の皿 A, capacity_mL: 700, inner_diameter_cm: 8,
+     position: [12, -12, -12], tag: A0, hide_callout: true}
+  - {id: B0, type: pan, name: r0 の右の皿 B, capacity_mL: 700, inner_diameter_cm: 8,
+     position: [26, -26, -12], tag: B0, hide_callout: true}
+  - {id: R0, type: balance, name: "レジスタ r0（値 ＝ A − B）", inner_diameter_cm: 4, position: [19, -19, 6],
+     left: A0, right: B0, counterweight_mL: [0, 50], tag: r0, hide_callout: true}
+
+  - {id: W, type: basin, name: 捨て溝の受け, inner_diameter_cm: 10, capacity_mL: 1500,
+     position: [48, -48, -40], tag: 捨て溝, hide_callout: true}
+
+procedure:
+  - {phase: "①次の手番", fill: N0}
+  - {phase: "①次の手番", release: N0}
+  - {phase: "①次の手番", fill: N1}
+  - {phase: "①次の手番", release: N1}
+  - {phase: "②操作", fill: O0}
+  - {phase: "②操作", release: O0}
+  - {phase: "②操作", fill: O1}
+  - {phase: "②操作", release: O1}
+  - {phase: "③皿を空ける", release: T0}
+  - {phase: "③皿を空ける", release: T1}
+  - {phase: "④控えを移す", release: S0}
+  - {phase: "④控えを移す", release: S1}
+  - {phase: "④控えを移す", release: S2}
+
+cases:   # inputs：T0 に手番の水 1u、A0・A1 に初期値（単位数）。repeat：手順を何回くり返すか（2×r1＋1 回で止まる。余分に回しても変わらない）
+  - {id: x0y0, inputs: {T0: 1, A0: 0, A1: 0}, repeat: 3, expect: {R0: 0, R1: 0, T2: 1}}
+  - {id: x2y0, inputs: {T0: 1, A0: 2, A1: 0}, repeat: 3, expect: {R0: 2, R1: 0, T2: 1}}
+  - {id: x0y1, inputs: {T0: 1, A0: 0, A1: 1}, repeat: 5, expect: {R0: 1, R1: 0, T2: 1}}
+  - {id: x2y3, inputs: {T0: 1, A0: 2, A1: 3}, repeat: 9, expect: {R0: 5, R1: 0, T2: 1}}
+  - {id: x1y4, inputs: {T0: 1, A0: 1, A1: 4}, repeat: 12, expect: {R0: 5, R1: 0, T2: 1}}
+  - {id: x2y3_short, inputs: {T0: 1, A0: 2, A1: 3}, repeat: 4, expect: {R0: 4, R1: 1, T2: 0}}
+
+readout:
+  kind: named
+  inputs:
+    - {id: A0, label: r0}
+    - {id: A1, label: r1}
+  items:
+    - {id: R0, label: r0}
+    - {id: R1, label: r1}
+    - {id: T2, label: 停止}
+  default_case: x2y3
+
+reset:
+  - すべての皿・控え・受けを空にする（水は足すだけなので、皿には INC・DEC の回数の合計が溜まっている）
+
+assumptions:
+  - id: K1
+    text: レジスタの天秤は、値が 0 なら右（おもり 0.5u）、1 以上なら左が重くなる。皿にたくさん水が溜まっても、差 0.5u を見分けられる（竿の感度は差だけで決まり、皿の重さが増えると揺れが遅くなる）
+    status: ❓
+  - id: K2
+    text: ①（次の手番）を②（操作）より先にする。DEC の後に分岐を読むと、1 減った値で分岐してしまう
+    status: 💭 シミュレーションで確認
+  - id: K3
+    text: 1つのレジスタの竿に、それを使う JZDEC 命令の数×2 本の指し樋をつける（判定は指し樋の数だけ写せる。設計06）
+    status: 💭
+  - id: K4
+    text: 誤差は注ぐたびに積み重なる。注ぐ量 ±0.03u なら 2倍のプログラムで y=20 まで 98%（tools/counter_machine.py）
+    status: 💭 シミュレーション
+  - id: K5
+    text: ④の「控えを駅の皿へ移す」は、図では下から上へ運ぶ形になっている。実物では控えを駅の皿の真上に置き、栓を抜くだけにする
+    status: 💭
