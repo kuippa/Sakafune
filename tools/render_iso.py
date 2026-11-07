@@ -62,6 +62,18 @@ class Sim:
         self.state = {pid: 0 for pid, p in self.parts.items() if p["type"] == "tipping_bucket"}
         self.route = {pid: p["route"] for pid, p in self.parts.items() if p["type"] == "chute"}
 
+    def tilt(self, bid):
+        """天秤 bid の傾き：left_heavy / level / right_heavy。
+        重さ＝皿の水＋おもり。差が deadband_mL 未満なら水平（level）。"""
+        b = self.parts[bid]
+        cw = b.get("counterweight_mL", [0, 0])
+        left = (self.vol[b["left"]] if b.get("left") else 0.0) + cw[0]
+        right = (self.vol[b["right"]] if b.get("right") else 0.0) + cw[1]
+        d = left - right
+        if abs(d) < b.get("deadband_mL", 0) or abs(d) < 1e-9:
+            return "level"
+        return "left_heavy" if d > 0 else "right_heavy"
+
     def settle(self):
         changed = True
         while changed:
@@ -95,6 +107,14 @@ class Sim:
                 elif p["type"] == "vane" and v > 1e-9:
                     # 振り分け板：つながった両升の向きで行き先が決まる
                     self.vol[p["route_to"][self.state[p["bucket"]]]] += v
+                    self.vol[pid] = 0.0
+                    changed = True
+                elif p["type"] == "pointer" and v > 1e-9:
+                    # 指し樋：天秤の竿と一緒に振れ、いまの傾きの受け口へ流す
+                    to = p["route_to"].get(self.tilt(p["balance"]))
+                    if to is None:
+                        raise ValueError(f"{pid}: 傾き {self.tilt(p['balance'])} の受け口がない")
+                    self.vol[to] += v
                     self.vol[pid] = 0.0
                     changed = True
                 elif p["type"] == "splitter" and v > 1e-9:
@@ -163,11 +183,11 @@ def raw_point(x, y, z):
 
 
 def part_height(part):
-    if part["type"] in ("siphon_cup", "basin", "holed_cup"):
+    if part["type"] in ("siphon_cup", "basin", "holed_cup", "pan"):
         return height_cm(part, part["capacity_mL"])
     if part["type"] == "splitter":
         return 3
-    if part["type"] in ("tipping_bucket", "vane", "sozu", "chute"):
+    if part["type"] in ("tipping_bucket", "vane", "sozu", "chute", "balance", "pointer"):
         return 8
     if part["type"] == "metering_cup":
         return height_cm(part, part["volume_mL"]) * 1.15
@@ -290,6 +310,65 @@ def draw_sozu(iso, part, water_ml, route=None):
     return out, geo
 
 
+TILT_DEG = {"left_heavy": -12, "level": 0, "right_heavy": 12}
+TILT_JA = {"left_heavy": "左が重い", "level": "釣り合い", "right_heavy": "右が重い"}
+
+
+def draw_balance(iso, part, tilt, geo, u):
+    """天秤（竿・支点・吊りひも・おもり）の模式。皿は pan として別に描く。"""
+    x, y, z = part["position"]
+    cx, base = iso.p(x, y, z)
+    _, pivot = iso.p(x, y, z + 8)
+    s = iso.s
+    spans = [abs(geo[part[k]]["cx"] - cx) for k in ("left", "right") if part.get(k)]
+    L = max(spans) if spans else 10 * s
+    ang = math.radians(TILT_DEG[tilt])
+    out = [f'<line x1="{cx:.1f}" y1="{base:.1f}" x2="{cx:.1f}" y2="{pivot:.1f}" stroke="{COL["plug"]}" stroke-width="6"/>']
+    pts = {}
+    for side, sign in (("left", -1), ("right", 1)):
+        pts[side] = (cx + sign * L * math.cos(ang), pivot + sign * L * math.sin(ang))
+    (lx, ly), (rx, ry) = pts["left"], pts["right"]
+    out.append(f'<line x1="{lx:.1f}" y1="{ly:.1f}" x2="{rx:.1f}" y2="{ry:.1f}" stroke="#5a3a1a" '
+               f'stroke-width="5" stroke-linecap="round"/>')
+    cw = part.get("counterweight_mL", [0, 0])
+    for i, side in enumerate(("left", "right")):
+        ex, ey = pts[side]
+        if part.get(side):   # 吊りひも
+            g = geo[part[side]]
+            for dx in (-g["rx"] * 0.8, g["rx"] * 0.8):
+                out.append(f'<line x1="{ex:.1f}" y1="{ey:.1f}" x2="{g["cx"] + dx:.1f}" y2="{g["top"]:.1f}" '
+                           f'stroke="{COL["sub"]}" stroke-width="1.2"/>')
+        if cw[i]:   # おもり
+            out.append(f'<line x1="{ex:.1f}" y1="{ey:.1f}" x2="{ex:.1f}" y2="{ey + 26:.1f}" '
+                       f'stroke="{COL["sub"]}" stroke-width="1.2"/>')
+            out.append(f'<rect x="{ex - 13:.1f}" y="{ey + 26:.1f}" width="26" height="20" rx="3" '
+                       f'fill="#6f6a60" stroke="#2f2b25"/>')
+            out.append(text(ex, ey + 64, f"おもり {cw[i] / u:g}u", 12, "bold", anchor="middle"))
+    out.append(f'<circle cx="{cx:.1f}" cy="{pivot:.1f}" r="5" fill="#4a2e12"/>')
+    out.append(text(cx, pivot - 12, TILT_JA[tilt], 13, "bold", COL["thr"], anchor="middle"))
+    if part.get("tag"):
+        out.append(text(cx, pivot - 30, part["tag"], 14, "bold", anchor="middle"))
+    return out, {"cx": cx, "top": pivot - 8, "rx": L, "ry": 4, "bot": base}
+
+
+def draw_pointer(iso, part, tilt):
+    """指し樋：竿の支点の下に垂らした樋。竿と一緒に振れる（左が下がると先は右へ）。"""
+    x, y, z = part["position"]
+    cx, top = iso.p(x, y, z + 8)
+    L = 7 * iso.s
+    ang = TILT_DEG[tilt] * 1.8
+    out = [f'<line x1="{cx:.1f}" y1="{top:.1f}" x2="{cx:.1f}" y2="{top + L:.1f}" stroke="{COL["tube"]}" '
+           f'stroke-width="9" stroke-linecap="round" transform="rotate({ang} {cx:.1f} {top:.1f})"/>',
+           f'<path d="M{cx - 12:.1f},{top - 14:.1f} L{cx + 12:.1f},{top - 14:.1f} L{cx + 4:.1f},{top:.1f} '
+           f'L{cx - 4:.1f},{top:.1f} Z" fill="{COL["wall"]}" fill-opacity="0.6" stroke="{COL["plug"]}" stroke-width="1.5"/>',
+           f'<circle cx="{cx:.1f}" cy="{top:.1f}" r="4" fill="#4a2e12"/>']
+    tipx = cx - L * math.sin(math.radians(ang))
+    tipy = top + L * math.cos(math.radians(ang))
+    if part.get("tag"):
+        out.append(text(cx + 16, top - 4, part["tag"], 13, "bold"))
+    return out, {"cx": tipx, "top": top - 14, "rx": 12, "ry": 4, "bot": tipy}
+
+
 def draw_vessel(iso, part, water_ml):
     x, y, z = part["position"]
     r = part["inner_diameter_cm"] / 2
@@ -381,8 +460,23 @@ def callout(px, py, bx, by, lines, width=None):
     return out
 
 
-def callout_lines(part, vol_ml, u, inputs):
+def callout_lines(part, vol_ml, u, inputs, sim=None):
     lines = [(f"{part['id']}：{part['name']}", 14, "bold")]
+    if part["type"] == "balance":
+        if part.get("deadband_mL"):
+            lines.append((f"重さの差が ±{part['deadband_mL'] / u:g}u 未満なら釣り合い", 12, "normal"))
+        for n in part.get("notes", []):
+            lines.append((n, 12, "normal"))
+        if sim:
+            lines.append((f"いま：{TILT_JA[sim.tilt(part['id'])]}", 12, "bold"))
+        return lines
+    if part["type"] == "pointer":
+        for k in ("left_heavy", "level", "right_heavy"):
+            if k in part["route_to"]:
+                lines.append((f"{TILT_JA[k]} → {part['route_to'][k]}", 12, "normal"))
+        for n in part.get("notes", []):
+            lines.append((n, 12, "normal"))
+        return lines
     if part["type"] == "siphon_cup":
         lines.append((f"しきい値 θ = {part['threshold_mL'] / u:g}u（{part['threshold_mL']}mL）"
                       f"／容量 {part['capacity_mL']}mL", 12, "normal"))
@@ -397,7 +491,8 @@ def callout_lines(part, vol_ml, u, inputs):
         return lines
     if part["id"] in inputs:
         v = int(bool(inputs[part["id"]]))
-        lines.append((f"入力値：{v}（{'1u 満たして注いだ' if v else '空のまま'}）", 12, "bold"))
+        amt = f"{part.get('volume_mL', u) / u:g}u 満たして注いだ"
+        lines.append((f"入力値：{v}（{amt if v else '空のまま'}）", 12, "bold"))
         return lines
     state = f"水あり（{vol_ml / u:g}u）→ 1" if vol_ml > 1e-9 else "空 → 0"
     lines.append((f"いま：{state}", 12, "bold"))
@@ -518,8 +613,12 @@ def connections(model):
                 out.append((p, f"dump_to{i}", t))
         for t in p.get("route_options", []):
             out.append((p, "chute_opt", t))
-        for i, t in enumerate(p.get("route_to", [])):
-            out.append((p, f"route_to{i}", t))
+        if p["type"] == "pointer":
+            for t in dict.fromkeys(p["route_to"].values()):
+                out.append((p, "pointer_opt", t))
+        else:
+            for i, t in enumerate(p.get("route_to", [])):
+                out.append((p, f"route_to{i}", t))
     return out
 
 
@@ -544,7 +643,11 @@ def render(model, case, W=1500, H=None):
     # 器（奥から手前の順に描く）
     geo = {}
     for p in sorted(model["parts"], key=lambda q: q["position"][0] + q["position"][1]):
-        if p["type"] in ("sozu", "chute"):
+        if p["type"] == "balance":
+            continue   # 皿を描いてから描く
+        if p["type"] == "pointer":
+            shapes, g = draw_pointer(iso, p, sim.tilt(p["balance"]))
+        elif p["type"] in ("sozu", "chute"):
             shapes, g = draw_sozu(iso, p, vol.get(p["id"], 0.0), sim.route.get(p["id"]))
         elif p["type"] in ("tipping_bucket", "vane"):
             st = sim.state[p["id"] if p["type"] == "tipping_bucket" else p["bucket"]]
@@ -553,6 +656,10 @@ def render(model, case, W=1500, H=None):
             shapes, g = draw_vessel(iso, p, vol.get(p["id"], 0.0))
         geo[p["id"]] = g
         svg += shapes
+    for p in model["parts"]:
+        if p["type"] == "balance":
+            shapes, geo[p["id"]] = draw_balance(iso, p, sim.tilt(p["id"]), geo, u)
+            svg += shapes
 
     # 流れ
     for a, kind, to in connections(model):
@@ -608,6 +715,16 @@ def render(model, case, W=1500, H=None):
             svg.append(f'<path d="{d}" fill="none" stroke="{COL["flow"] if on else COL["sub"]}" '
                        f'stroke-width="{3 if on else 1.5}" stroke-dasharray="{"none" if on else "4 5"}" '
                        f'stroke-opacity="{1 if on else 0.6}" marker-end="url(#{"ah" if on else "ahk"})"/>')
+        elif kind == "pointer_opt":
+            on = a["route_to"].get(sim.tilt(a["balance"])) == to
+            keys = [TILT_JA[k] for k, v in a["route_to"].items() if v == to]
+            sx, sy = g["cx"], g["bot"]
+            d = f"M{sx:.1f},{sy:.1f} Q{(sx + ex) / 2:.1f},{sy:.1f} {ex:.1f},{ey:.1f}"
+            svg.append(f'<path d="{d}" fill="none" stroke="{COL["flow"] if on else COL["sub"]}" '
+                       f'stroke-width="{3 if on else 1.5}" stroke-dasharray="{"none" if on else "4 5"}" '
+                       f'stroke-opacity="{1 if on else 0.6}" marker-end="url(#{"ah" if on else "ahk"})"/>')
+            svg.append(text((sx + ex) / 2, (sy + ey) / 2 - 4, "・".join(keys), 11, "bold",
+                            COL["flow"] if on else COL["sub"], anchor="middle"))
         elif kind == "split_to":
             sx, sy = g["cx"], g["bot"]
             d = f"M{sx:.1f},{sy:.1f} Q{sx:.1f},{ey - 20:.1f} {ex:.1f},{ey:.1f}"
@@ -619,8 +736,12 @@ def render(model, case, W=1500, H=None):
             svg.append(f'<path d="{d}" fill="none" stroke="{COL["sub"]}" stroke-width="1.6" '
                        f'stroke-dasharray="3 4" marker-end="url(#ahk)"/>')
 
-    # 両升と振り分け板が同じ軸でつながっていることを示す
+    # 両升と振り分け板（天秤と指し樋）が同じ軸でつながっていることを示す
     for p in model["parts"]:
+        if p["type"] == "pointer":
+            a, b = geo[p["id"]], geo[p["balance"]]
+            svg.append(f'<line x1="{a["cx"]:.1f}" y1="{a["top"]:.1f}" x2="{b["cx"]:.1f}" '
+                       f'y2="{b["top"] + 8:.1f}" stroke="#4a2e12" stroke-width="2" stroke-dasharray="2 4"/>')
         if p["type"] == "vane":
             a, b = geo[p["id"]], geo[p["bucket"]]
             svg.append(f'<line x1="{a["cx"]:.1f}" y1="{a["top"] + 6:.1f}" x2="{b["cx"]:.1f}" '
@@ -637,7 +758,7 @@ def render(model, case, W=1500, H=None):
         dx, dy = p.get("callout", [-290, 6])
         ax, ay = g["cx"] - g["rx"], g["bot"]
         svg += callout(g["cx"] - g["rx"] * 0.7, g["bot"], ax + dx, ay + dy,
-                       callout_lines(p, vol.get(p["id"], 0.0), u, case.get("inputs") or {}))
+                       callout_lines(p, vol.get(p["id"], 0.0), u, case.get("inputs") or {}, sim))
 
     # 右側のパネル
     px = 1100

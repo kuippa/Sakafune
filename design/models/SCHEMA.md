@@ -27,6 +27,9 @@ assumptions: # 前提と未確認事項（✅💭❓）
 | `sozu` | 添水（鹿威し）。中身が `threshold_mL` 以上になると傾いて全部を `dump_to` へ出し、空で戻る | `threshold_mL`, `capacity_mL`, `dump_to` |
 | `chute` | 受け樋。来た水を、人が向けた先へ流す。初めの向きは `route` | `route`, `route_options`（図に描く行き先の候補） |
 | `basin` | 受けの器。ためるだけ | `capacity_mL` |
+| `pan` | 天秤の吊り皿。ためるだけ（重さが天秤の傾きになる） | `capacity_mL` |
+| `balance` | 天秤（竿と支点）。重さ＝皿の水＋おもり。左右の差が `deadband_mL` 未満なら釣り合い（level）、それ以上なら重い側へ止め木まで傾く（left_heavy／right_heavy） | `left`, `right`（皿の id。片側をおもりだけにするなら省略）, `counterweight_mL: [左, 右]`（省略時 0）, `deadband_mL`（省略時 0） |
+| `pointer` | 指し樋。`balance` の竿と一緒に振れ、来た水をいまの傾きの受け口へ流す。同じ天秤に何本つけてもよい（判定を写せる） | `balance`, `route_to: {left_heavy: 行き先, level: 行き先, right_heavy: 行き先}`（起きない傾きは省略可） |
 
 共通の省略可能な項目：
 - `notes`：図の注釈に足す文（リスト）

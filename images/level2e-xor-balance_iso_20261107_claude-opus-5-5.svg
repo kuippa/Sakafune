@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 895" width="1500" height="895" font-family="'Yu Gothic','Meiryo','Hiragino Sans','Noto Sans CJK JP',sans-serif">
+<defs>
+  <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#2f7fc8"/></marker>
+  <marker id="ahk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#6a5e4c"/></marker>
+</defs>
+<rect width="1500" height="895" fill="#f7f2e7"/>
+<text x="36.0" y="52.0" font-size="30" font-weight="bold" fill="#3a3226" text-anchor="start">天秤と指し樋で作る XOR／XNOR ― 3D斜め見下ろし模式図</text>
+<text x="36.0" y="84.0" font-size="15" font-weight="normal" fill="#6a5e4c" text-anchor="start">モデル定義：design/models/level2e_xor_balance.yaml から自動生成。作成：claude-opus-5-5（2026-11-07）。状態：💭 設計値（未試作）</text>
+<text x="36.0" y="108.0" font-size="15" font-weight="normal" fill="#6a5e4c" text-anchor="start">a を左の皿、b を右の皿へ。竿が止まってから予備の水 c を注ぐと、指し樋が釣り合いなら Y0、傾いていれば Y1 へ流す。</text>
+<path d="M383.9,281.3 L383.9,300.7 A17.6,10.1 0 0 0 419.0,300.7 L419.0,281.3 A17.6,10.1 0 0 1 383.9,281.3 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="401.5" cy="281.3" rx="17.6" ry="10.1" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M383.9,281.3 L383.9,300.7 A17.6,10.1 0 0 0 419.0,300.7 L419.0,281.3 A17.6,10.1 0 0 1 383.9,281.3 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="401.5" cy="281.3" rx="17.6" ry="10.1" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="401.5" y="328.8" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">a</text>
+<path d="M831.0,281.3 L831.0,300.7 A17.6,10.1 0 0 0 866.1,300.7 L866.1,281.3 A17.6,10.1 0 0 1 831.0,281.3 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="848.5" cy="281.3" rx="17.6" ry="10.1" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M831.0,281.3 L831.0,300.7 A17.6,10.1 0 0 0 866.1,300.7 L866.1,281.3 A17.6,10.1 0 0 1 831.0,281.3 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="848.5" cy="281.3" rx="17.6" ry="10.1" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="848.5" y="328.8" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">b</text>
+<path d="M607.4,233.5 L607.4,252.9 A17.6,10.1 0 0 0 642.6,252.9 L642.6,233.5 A17.6,10.1 0 0 1 607.4,233.5 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="625.0" cy="233.5" rx="17.6" ry="10.1" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M607.4,233.5 L607.4,252.9 A17.6,10.1 0 0 0 642.6,252.9 L642.6,233.5 A17.6,10.1 0 0 1 607.4,233.5 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="625.0" cy="233.5" rx="17.6" ry="10.1" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="625.0" y="281.0" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">c</text>
+<path d="M488.1,503.6 L488.1,515.8 A29.3,16.9 0 0 0 546.6,515.8 L546.6,503.6 A29.3,16.9 0 0 1 488.1,503.6 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="517.4" cy="503.6" rx="29.3" ry="16.9" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M489.0,509.7 L489.0,515.8 A28.4,16.4 0 0 0 545.8,515.8 L545.8,509.7 A28.4,16.4 0 0 1 489.0,509.7 Z" fill="#3d8fd6" fill-opacity="0.75"/>
+<ellipse cx="517.4" cy="509.7" rx="28.4" ry="16.4" fill="#8fc3ec"/>
+<path d="M488.1,503.6 L488.1,515.8 A29.3,16.9 0 0 0 546.6,515.8 L546.6,503.6 A29.3,16.9 0 0 1 488.1,503.6 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="517.4" cy="503.6" rx="29.3" ry="16.9" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="517.4" y="550.7" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">左の皿</text>
+<path d="M703.4,503.6 L703.4,515.8 A29.3,16.9 0 0 0 761.9,515.8 L761.9,503.6 A29.3,16.9 0 0 1 703.4,503.6 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="732.6" cy="503.6" rx="29.3" ry="16.9" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M703.4,503.6 L703.4,515.8 A29.3,16.9 0 0 0 761.9,515.8 L761.9,503.6 A29.3,16.9 0 0 1 703.4,503.6 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="732.6" cy="503.6" rx="29.3" ry="16.9" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="732.6" y="550.7" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">右の皿</text>
+<line x1="625.0" y1="592.3" x2="625.0" y2="625.7" stroke="#6b8f2a" stroke-width="9" stroke-linecap="round" transform="rotate(-21.6 625.0 592.3)"/>
+<path d="M613.0,578.3 L637.0,578.3 L629.0,592.3 L621.0,592.3 Z" fill="#c98b5a" fill-opacity="0.6" stroke="#8a5a2b" stroke-width="1.5"/>
+<circle cx="625.0" cy="592.3" r="4" fill="#4a2e12"/>
+<text x="641.0" y="588.3" font-size="13" font-weight="bold" fill="#3a3226" text-anchor="start">指し樋</text>
+<path d="M598.7,732.3 L598.7,754.8 A26.3,15.2 0 0 0 651.3,754.8 L651.3,732.3 A26.3,15.2 0 0 1 598.7,732.3 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="625.0" cy="732.3" rx="26.3" ry="15.2" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M598.7,732.3 L598.7,754.8 A26.3,15.2 0 0 0 651.3,754.8 L651.3,732.3 A26.3,15.2 0 0 1 598.7,732.3 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="625.0" cy="732.3" rx="26.3" ry="15.2" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="625.0" y="788.0" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">Y0：XNOR</text>
+<path d="M780.8,732.3 L780.8,754.8 A26.3,15.2 0 0 0 833.5,754.8 L833.5,732.3 A26.3,15.2 0 0 1 780.8,732.3 Z" fill="#c98b5a" fill-opacity="0.18" stroke="none"/>
+<ellipse cx="807.1" cy="732.3" rx="26.3" ry="15.2" fill="#c98b5a" fill-opacity="0.25" stroke="none"/>
+<path d="M781.6,747.3 L781.6,754.8 A25.6,14.8 0 0 0 832.7,754.8 L832.7,747.3 A25.6,14.8 0 0 1 781.6,747.3 Z" fill="#3d8fd6" fill-opacity="0.75"/>
+<ellipse cx="807.1" cy="747.3" rx="25.6" ry="14.8" fill="#8fc3ec"/>
+<path d="M780.8,732.3 L780.8,754.8 A26.3,15.2 0 0 0 833.5,754.8 L833.5,732.3 A26.3,15.2 0 0 1 780.8,732.3 Z" fill="#c98b5a" fill-opacity="0.22" stroke="#7a4a26" stroke-width="2"/>
+<ellipse cx="807.1" cy="732.3" rx="26.3" ry="15.2" fill="none" stroke="#7a4a26" stroke-width="2"/>
+<text x="807.1" y="788.0" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">Y1：XOR</text>
+<line x1="625.0" y1="420.2" x2="625.0" y2="382.0" stroke="#8a5a2b" stroke-width="6"/>
+<line x1="519.7" y1="404.3" x2="730.3" y2="359.6" stroke="#5a3a1a" stroke-width="5" stroke-linecap="round"/>
+<line x1="519.7" y1="404.3" x2="494.0" y2="503.6" stroke="#6a5e4c" stroke-width="1.2"/>
+<line x1="519.7" y1="404.3" x2="540.8" y2="503.6" stroke="#6a5e4c" stroke-width="1.2"/>
+<line x1="730.3" y1="359.6" x2="709.2" y2="503.6" stroke="#6a5e4c" stroke-width="1.2"/>
+<line x1="730.3" y1="359.6" x2="756.0" y2="503.6" stroke="#6a5e4c" stroke-width="1.2"/>
+<circle cx="625.0" cy="382.0" r="5" fill="#4a2e12"/>
+<text x="625.0" y="370.0" font-size="13" font-weight="bold" fill="#c0392b" text-anchor="middle">左が重い</text>
+<text x="625.0" y="352.0" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="middle">天秤</text>
+<path d="M419.0,281.3 Q488.2,251.3 517.4,489.3" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M866.1,281.3 Q819.4,251.3 732.6,489.3" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M642.6,233.5 Q653.8,203.5 625.0,577.9" fill="none" stroke="#8a5a2b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+<path d="M637.3,623.4 Q722.2,623.4 807.1,717.9" fill="none" stroke="#2f7fc8" stroke-width="3" stroke-dasharray="none" stroke-opacity="1" marker-end="url(#ah)"/>
+<text x="722.2" y="666.7" font-size="11" font-weight="bold" fill="#2f7fc8" text-anchor="middle">左が重い・右が重い</text>
+<path d="M637.3,623.4 Q631.2,623.4 625.0,717.9" fill="none" stroke="#6a5e4c" stroke-width="1.5" stroke-dasharray="4 5" stroke-opacity="0.6" marker-end="url(#ahk)"/>
+<text x="631.2" y="666.7" font-size="11" font-weight="bold" fill="#6a5e4c" text-anchor="middle">釣り合い</text>
+<line x1="637.3" y1="578.3" x2="625.0" y2="382.0" stroke="#4a2e12" stroke-width="2" stroke-dasharray="2 4"/>
+<line x1="388.3" y1="292.7" x2="389.2" y2="300.7" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="183.9" y="240.7" width="204" height="52.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="193.9" y="264.7" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">IA：入力 a</text>
+<text x="193.9" y="282.7" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">入力値：1（1u 満たして注いだ）</text>
+<line x1="891.0" y1="292.7" x2="836.2" y2="300.7" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="891.0" y="240.7" width="149" height="52.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="901.0" y="264.7" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">IB：入力 b</text>
+<text x="901.0" y="282.7" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">入力値：0（空のまま）</text>
+<line x1="677.4" y1="220.9" x2="612.7" y2="252.9" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="677.4" y="132.9" width="250" height="88.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="687.4" y="156.9" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">IC：予備の水 c（毎回 1u）</text>
+<text x="687.4" y="174.9" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">竿が止まってから注ぐ</text>
+<text x="687.4" y="192.9" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">（人が毎回同じように満たす＝電源の役）</text>
+<text x="687.4" y="210.9" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：空 → 0</text>
+<line x1="417.0" y1="418.2" x2="549.7" y2="420.2" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="187.4" y="330.2" width="230" height="88.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="197.4" y="354.2" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">B：天秤（竿と支点）</text>
+<text x="197.4" y="372.2" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">重さの差が ±0.5u 未満なら釣り合い</text>
+<text x="197.4" y="390.2" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">差が 1u なら止め木まで傾く</text>
+<text x="197.4" y="408.2" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：左が重い</text>
+<line x1="549.0" y1="646.4" x2="628.9" y2="623.4" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="295.3" y="593.4" width="254" height="106.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="305.3" y="617.4" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">X：指し樋（支点の下に垂らした樋）</text>
+<text x="305.3" y="635.4" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">左が重い → Y1</text>
+<text x="305.3" y="653.4" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">釣り合い → Y0</text>
+<text x="305.3" y="671.4" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">右が重い → Y1</text>
+<text x="305.3" y="689.4" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">竿と一緒に振れる</text>
+<line x1="558.8" y1="804.8" x2="606.6" y2="754.8" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="268.7" y="804.8" width="290" height="52.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="278.7" y="828.8" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">Y0：出力 Y0：a XNOR b（中央の受け口）</text>
+<text x="278.7" y="846.8" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：空 → 0</text>
+<line x1="850.8" y1="794.8" x2="788.7" y2="754.8" stroke="#6a5e4c" stroke-width="1.3" marker-end="url(#ahk)"/>
+<rect x="850.8" y="794.8" width="282" height="52.0" rx="6" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="860.8" y="818.8" font-size="14" font-weight="bold" fill="#3a3226" text-anchor="start">Y1：出力 Y1：a XOR b（左右の受け口）</text>
+<text x="860.8" y="836.8" font-size="12" font-weight="bold" fill="#3a3226" text-anchor="start">いま：水あり（1u）→ 1</text>
+<rect x="1100" y="140" width="364" height="150" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="1116.0" y="170.0" font-size="17" font-weight="bold" fill="#3a3226" text-anchor="start">図の状態：case a1b0 の後</text>
+<text x="1116.0" y="206.0" font-size="16" font-weight="normal" fill="#3a3226" text-anchor="start">入力：a=1　b=0</text>
+<text x="1116.0" y="240.0" font-size="20" font-weight="bold" fill="#2f7fc8" text-anchor="start">出力：XOR(Y1)=1　XNOR(Y0)=0</text>
+<text x="1116.0" y="274.0" font-size="13" font-weight="normal" fill="#6a5e4c" text-anchor="start">水が残っている器＝1、空の器＝0</text>
+<rect x="1100" y="305" width="364" height="120" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="1116.0" y="331.0" font-size="15" font-weight="bold" fill="#3a3226" text-anchor="start">人の操作（判断なし・この順に）</text>
+<text x="1116.0" y="355.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">1. 段階1：IA を注ぐ（栓を抜く）</text>
+<text x="1116.0" y="375.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">2. 段階1：IB を注ぐ（栓を抜く）</text>
+<text x="1116.0" y="395.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">3. 段階2：IC を満たす</text>
+<text x="1116.0" y="415.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">4. 段階2：IC を注ぐ（栓を抜く）</text>
+<rect x="1100" y="440" width="364" height="140" rx="8" fill="#fffdf7" stroke="#c9bfa8"/>
+<text x="1116.0" y="466.0" font-size="15" font-weight="bold" fill="#3a3226" text-anchor="start">凡例</text>
+<rect x="1116" y="478" width="26" height="14" fill="#c98b5a" fill-opacity="0.4" stroke="#7a4a26"/>
+<text x="1152.0" y="490.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">土器の器</text>
+<rect x="1290" y="478" width="10" height="13" rx="2" fill="#8a5a2b"/>
+<text x="1310.0" y="490.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">木の栓</text>
+<rect x="1116" y="502" width="26" height="8" fill="#6b8f2a"/>
+<text x="1152.0" y="511.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">竹の管（サイフォン）</text>
+<line x1="1116" y1="530" x2="1142" y2="530" stroke="#c0392b" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="1152.0" y="535.0" font-size="13" font-weight="normal" fill="#3a3226" text-anchor="start">しきい値・穴の高さ</text>
+<line x1="1116" y1="556" x2="1142" y2="556" stroke="#2f7fc8" stroke-width="3" marker-end="url(#ah)"/>
+<text x="1152.0" y="561.0" font-size="12" font-weight="normal" fill="#3a3226" text-anchor="start">水の流れ（緑の管＝サイフォン、茶の点線＝栓・注ぎ）</text>
+<text x="1480.0" y="877.0" font-size="12" font-weight="normal" fill="#6a5e4c" text-anchor="end">寸法は設計値（未試作）。❓の前提は YAML の assumptions を参照</text>
+</svg>

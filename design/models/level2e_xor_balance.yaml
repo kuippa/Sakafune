@@ -1,0 +1,119 @@
+# レベル2e：天秤と指し樋で作る XOR／XNOR のモデル定義
+# このファイルが正本。書き方は SCHEMA.md を参照。
+# 状態の記号：✅確認済み / 💭推論・設計値 / ❓要確認（試作・調査で確かめる）
+#
+# 考え方（design/05_balance-xor.md）：
+#   XOR ＝「a と b が等しくない」。数えずに天秤で比べる。
+#     a を左の皿、b を右の皿に注ぐ。竿が止まってから、予備の水 c（1u）を支点の上の漏斗に注ぐ。
+#     支点の下に垂らした指し樋が竿と一緒に振れ、c を
+#       釣り合い（a=b）→ 中央の受け口 Y0（XNOR）
+#       傾き（a≠b）    → 左右の受け口 Y1（XOR）
+#     へ流す。出力は c そのものなので、ちょうど 1u。次の天秤の皿にそのまま注げる。
+
+meta:
+  id: level2e_xor_balance
+  title: 天秤と指し樋で作る XOR／XNOR
+  design_doc: ../05_balance-xor.md
+  author: claude-opus-5-5
+  created: 2026-11-07
+  status: 💭 設計値（未試作）
+  caption: a を左の皿、b を右の皿へ。竿が止まってから予備の水 c を注ぐと、指し樋が釣り合いなら Y0、傾いていれば Y1 へ流す。
+
+layout:
+  fit_box: [250, 200, 1000, -90]
+
+units:
+  length: cm
+  volume: mL
+  u_mL: 100
+
+parts:
+  - {id: IA, type: metering_cup, name: 入力 a, volume_mL: 100, inner_diameter_cm: 6,
+     position: [-27, 27, 95], drain_to: PL, tag: a, callout: [-200, -60]}
+  - {id: IB, type: metering_cup, name: 入力 b, volume_mL: 100, inner_diameter_cm: 6,
+     position: [27, -27, 95], drain_to: PR, tag: b, callout: [60, -60]}
+  - id: IC
+    type: metering_cup
+    name: "予備の水 c（毎回 1u）"
+    volume_mL: 100
+    inner_diameter_cm: 6
+    position: [0, 0, 105]
+    drain_to: X
+    tag: c
+    notes: ["竿が止まってから注ぐ", "（人が毎回同じように満たす＝電源の役）"]
+    callout: [70, -120]
+
+  - {id: PL, type: pan, name: 左の皿, capacity_mL: 200, inner_diameter_cm: 10,
+     position: [-13, 13, 50], tag: 左の皿, hide_callout: true}
+  - {id: PR, type: pan, name: 右の皿, capacity_mL: 200, inner_diameter_cm: 10,
+     position: [13, -13, 50], tag: 右の皿, hide_callout: true}
+  - id: B
+    type: balance
+    name: 天秤（竿と支点）
+    inner_diameter_cm: 4
+    position: [0, 0, 70]
+    left: PL
+    right: PR
+    deadband_mL: 50
+    tag: 天秤
+    notes: ["差が 1u なら止め木まで傾く"]
+    callout: [-330, -90]
+
+  - id: X
+    type: pointer
+    name: 指し樋（支点の下に垂らした樋）
+    inner_diameter_cm: 4
+    position: [0, 0, 26]
+    balance: B
+    route_to: {left_heavy: Y1, level: Y0, right_heavy: Y1}
+    tag: 指し樋
+    notes: ["竿と一緒に振れる"]
+    callout: [-330, -30]
+
+  - {id: Y0, type: basin, name: "出力 Y0：a XNOR b（中央の受け口）", inner_diameter_cm: 9, capacity_mL: 300,
+     position: [0, 0, 0], tag: "Y0：XNOR", callout: [-330, 50]}
+  - {id: Y1, type: basin, name: "出力 Y1：a XOR b（左右の受け口）", inner_diameter_cm: 9, capacity_mL: 300,
+     position: [22, -22, 0], tag: "Y1：XOR", callout: [70, 40]}
+
+procedure:
+  - {phase: "段階1", release: IA}
+  - {phase: "段階1", release: IB}
+  - {phase: "段階2", fill: IC}
+  - {phase: "段階2", release: IC}
+
+cases:
+  - {id: a0b0, inputs: {IA: 0, IB: 0}, expect: {Y1: 0, Y0: 1}}
+  - {id: a1b0, inputs: {IA: 1, IB: 0}, expect: {Y1: 1, Y0: 0}}
+  - {id: a0b1, inputs: {IA: 0, IB: 1}, expect: {Y1: 1, Y0: 0}}
+  - {id: a1b1, inputs: {IA: 1, IB: 1}, expect: {Y1: 0, Y0: 1}}
+
+readout:
+  kind: named
+  inputs:
+    - {id: IA, label: a}
+    - {id: IB, label: b}
+  items:
+    - {id: Y1, label: "XOR(Y1)"}
+    - {id: Y0, label: "XNOR(Y0)"}
+  default_case: a1b0
+
+reset:
+  - 両方の皿の水を捨てる
+  - 出力の器を空にする
+
+assumptions:
+  - id: B1
+    text: 重さの差が ±0.5u 未満なら竿が水平に止まり、指し樋が中央の受け口を指す。差が 1u なら止め木まで傾き、左右の受け口を指す（重心を支点より少し下に置く）
+    status: ❓
+  - id: B2
+    text: 注ぐ量のばらつき ±0.1u で正答率 99.98%（tools/xor_robustness.py。最終的な重さで比べるので、注ぐ順番や速さに左右されない）
+    status: 💭 シミュレーション
+  - id: B3
+    text: 竿の揺れが止まってから c を注ぐ。止まるまでの時間と、揺れを抑える工夫（皿の下に水を張って抵抗にする等）は未確認
+    status: ❓
+  - id: B4
+    text: c が指し樋を流れる間、その水の重さは竿の傾きを戻す向きに働く（傾くと樋の先が支点の真下からずれるため）。樋を短くし、細く流して、傾きが変わらない範囲に抑える
+    status: ❓
+  - id: B5
+    text: 天秤（権衡）は升と並ぶ度量衡の基本の道具。竿・吊り皿・竹の樋で作れる
+    status: 🔍 references/05

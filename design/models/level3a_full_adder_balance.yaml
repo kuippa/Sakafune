@@ -1,0 +1,190 @@
+# レベル3a：天秤3つで作る全加算器のモデル定義
+# このファイルが正本。書き方は SCHEMA.md を参照。
+# 状態の記号：✅確認済み / 💭推論・設計値 / ❓要確認（試作・調査で確かめる）
+#
+# 考え方（design/06_balance-full-adder.md）：
+#   部品は天秤（＋指し樋）と升だけ。
+#     天秤B1（XOR）：左の皿に a、右の皿に b。傾いていれば予備の水 r1 を B2 の左の皿へ（＝ a XOR b）
+#     天秤B2（XOR）：左の皿に a XOR b、右の皿に c。傾いていれば予備の水 r2 を S へ（＝ a XOR b XOR c）
+#     天秤BM（多数決）：左の皿に a, b, c を全部、右におもり 1.5u。左が重ければ（2つ以上が1）予備の水 r3 を C へ
+#   a, b, c は2つの天秤で使うので、1u の升で2回ずつ注ぐ（分水口で分けるより誤差に強い）。
+#   出力はどれも予備の水そのもの（1u）なので、次の段の皿にそのまま注げる。
+#   桁上りは次の段でも2つの天秤で使うので、BM の竿に指し樋を2本つけ、予備の水を1本ずつ注いで
+#   1u の桁上りを2本作る（C → 次の段の B2、C2 → 次の段の BM）。天秤の判定は、指し樋の数だけ写せる。
+
+meta:
+  id: level3a_full_adder_balance
+  title: 天秤3つで作る全加算器
+  design_doc: ../06_balance-full-adder.md
+  author: claude-opus-5-5
+  created: 2026-11-07
+  status: 💭 設計値（未試作）
+  caption: XOR の天秤を2つつないで和 S、おもり 1.5u と比べる天秤で桁上り C。桁上りは指し樋2本で2本に写し、次の段の2つの天秤へ配る。
+
+layout:
+  fit_box: [120, 200, 1020, -60]
+
+units:
+  length: cm
+  volume: mL
+  u_mL: 100
+
+parts:
+  # ---- 入力（1u の升で2回ずつ注ぐ：1回目は XOR の天秤へ、2回目は多数決の天秤へ） ----
+  - {id: IA, type: metering_cup, name: 入力 a, volume_mL: 100, inner_diameter_cm: 5,
+     position: [-47, 47, 118], drain_to: P1L, tag: a, callout: [-110, -110],
+     notes: ["a, b, c は 1u の升で2回ずつ注ぐ", "（1回目 → XOR の天秤、2回目 → 多数決の天秤）"]}
+  - {id: IA2, type: metering_cup, name: "入力 a（2回目）", volume_mL: 100, inner_diameter_cm: 5,
+     position: [-41, 41, 118], drain_to: PM, tag: a, hide_callout: true}
+  - {id: IB, type: metering_cup, name: 入力 b, volume_mL: 100, inner_diameter_cm: 5,
+     position: [-19, 19, 118], drain_to: P1R, tag: b, hide_callout: true}
+  - {id: IB2, type: metering_cup, name: "入力 b（2回目）", volume_mL: 100, inner_diameter_cm: 5,
+     position: [-13, 13, 118], drain_to: PM, tag: b, hide_callout: true}
+  - {id: IC, type: metering_cup, name: "入力 c（下の桁からの桁上り）", volume_mL: 100, inner_diameter_cm: 5,
+     position: [9, -9, 118], drain_to: P2R, tag: c, hide_callout: true}
+  - {id: IC2, type: metering_cup, name: "入力 c（2回目）", volume_mL: 100, inner_diameter_cm: 5,
+     position: [15, -15, 118], drain_to: PM, tag: c, hide_callout: true}
+
+  # ---- 天秤B1：a XOR b ----
+  - {id: P1L, type: pan, name: B1 左の皿, capacity_mL: 200, inner_diameter_cm: 8,
+     position: [-36, 36, 62], hide_callout: true}
+  - {id: P1R, type: pan, name: B1 右の皿, capacity_mL: 200, inner_diameter_cm: 8,
+     position: [-24, 24, 62], hide_callout: true}
+  - id: B1
+    type: balance
+    name: "天秤B1：a XOR b"
+    inner_diameter_cm: 4
+    position: [-30, 30, 80]
+    left: P1L
+    right: P1R
+    deadband_mL: 50
+    tag: B1
+    callout: [-200, 95]
+  - {id: R1, type: metering_cup, name: 予備の水 r1, volume_mL: 100, inner_diameter_cm: 5,
+     position: [-38, 38, 98], drain_to: X1, tag: r1, hide_callout: true}
+  - {id: X1, type: pointer, name: 指し樋 X1, inner_diameter_cm: 4, position: [-30, 30, 42],
+     balance: B1, route_to: {left_heavy: P2L, level: W, right_heavy: P2L}, tag: X1, hide_callout: true}
+
+  # ---- 天秤B2：(a XOR b) XOR c ＝ 和 S ----
+  - {id: P2L, type: pan, name: B2 左の皿, capacity_mL: 200, inner_diameter_cm: 8,
+     position: [-6, 6, 28], hide_callout: true}
+  - {id: P2R, type: pan, name: B2 右の皿, capacity_mL: 200, inner_diameter_cm: 8,
+     position: [6, -6, 28], hide_callout: true}
+  - id: B2
+    type: balance
+    name: "天秤B2：(a XOR b) XOR c"
+    inner_diameter_cm: 4
+    position: [0, 0, 46]
+    left: P2L
+    right: P2R
+    deadband_mL: 50
+    tag: B2
+    callout: [-380, 110]
+  - {id: R2, type: metering_cup, name: 予備の水 r2, volume_mL: 100, inner_diameter_cm: 5,
+     position: [-3, 3, 74], drain_to: X2, tag: r2, hide_callout: true}
+  - {id: X2, type: pointer, name: 指し樋 X2, inner_diameter_cm: 4, position: [0, 0, 8],
+     balance: B2, route_to: {left_heavy: S, level: W, right_heavy: S}, tag: X2, hide_callout: true}
+
+  # ---- 天秤BM：多数決（桁上り） ----
+  - {id: PM, type: pan, name: BM 左の皿（a, b, c を全部）, capacity_mL: 400, inner_diameter_cm: 9,
+     position: [27, -27, 62], hide_callout: true}
+  - id: BM
+    type: balance
+    name: "天秤BM：多数決（桁上り）"
+    inner_diameter_cm: 4
+    position: [33, -33, 80]
+    left: PM
+    counterweight_mL: [0, 150]
+    tag: BM
+    notes: ["左に a, b, c、右におもり 1.5u", "2つ以上が1なら左が重い"]
+    callout: [-45, -310]
+  - {id: R3, type: metering_cup, name: 予備の水 r3, volume_mL: 100, inner_diameter_cm: 5,
+     position: [36, -36, 100], drain_to: X3, tag: r3, hide_callout: true}
+  - {id: R4, type: metering_cup, name: 予備の水 r4, volume_mL: 100, inner_diameter_cm: 5,
+     position: [42, -42, 100], drain_to: X4, tag: r4, hide_callout: true}
+  - {id: X3, type: pointer, name: 指し樋 X3, inner_diameter_cm: 4, position: [31, -31, 42],
+     balance: BM, route_to: {left_heavy: C, right_heavy: W}, tag: X3, hide_callout: true}
+  - id: X4
+    type: pointer
+    name: 指し樋 X4（2本目）
+    inner_diameter_cm: 4
+    position: [37, -37, 42]
+    balance: BM
+    route_to: {left_heavy: C2, right_heavy: W}
+    tag: X4
+    notes: ["X3 と同じ竿につける", "桁上りを2本に写す"]
+    callout: [50, -160]
+
+  # ---- 出力 ----
+  - {id: S, type: basin, name: "和 S ＝ a XOR b XOR c", inner_diameter_cm: 9, capacity_mL: 300,
+     position: [-8, 8, -24], tag: "和 S", callout: [-300, 20]}
+  - {id: C, type: basin, name: "桁上り C ＝ 多数決(a, b, c)", inner_diameter_cm: 8, capacity_mL: 300,
+     position: [38, -38, -8], tag: "C", callout: [-20, 70],
+     notes: ["→ 次の段の B2 の右の皿へ"]}
+  - {id: C2, type: basin, name: "桁上り C2（C の写し）", inner_diameter_cm: 8, capacity_mL: 300,
+     position: [54, -54, -8], tag: "C2", callout: [90, 20],
+     notes: ["→ 次の段の BM の皿へ"]}
+  - {id: W, type: basin, name: 捨て溝の受け, inner_diameter_cm: 10, capacity_mL: 400,
+     position: [20, -20, -24], tag: 捨て溝, hide_callout: true}
+
+procedure:
+  - {phase: "段階1 入力", release: IA}
+  - {phase: "段階1 入力", release: IA2}
+  - {phase: "段階1 入力", release: IB}
+  - {phase: "段階1 入力", release: IB2}
+  - {phase: "段階1 入力", release: IC}
+  - {phase: "段階1 入力", release: IC2}
+  - {phase: "段階2 B1", fill: R1}
+  - {phase: "段階2 B1", release: R1}
+  - {phase: "段階3 B2", fill: R2}
+  - {phase: "段階3 B2", release: R2}
+  - {phase: "段階4 BM", fill: R3}
+  - {phase: "段階4 BM", release: R3}
+  - {phase: "段階4 BM", fill: R4}
+  - {phase: "段階4 BM", release: R4}
+
+cases:
+  - {id: a0b0c0, inputs: {IA: 0, IA2: 0, IB: 0, IB2: 0, IC: 0, IC2: 0}, expect: {S: 0, C: 0, C2: 0}}
+  - {id: a1b0c0, inputs: {IA: 1, IA2: 1, IB: 0, IB2: 0, IC: 0, IC2: 0}, expect: {S: 1, C: 0, C2: 0}}
+  - {id: a0b1c0, inputs: {IA: 0, IA2: 0, IB: 1, IB2: 1, IC: 0, IC2: 0}, expect: {S: 1, C: 0, C2: 0}}
+  - {id: a0b0c1, inputs: {IA: 0, IA2: 0, IB: 0, IB2: 0, IC: 1, IC2: 1}, expect: {S: 1, C: 0, C2: 0}}
+  - {id: a1b1c0, inputs: {IA: 1, IA2: 1, IB: 1, IB2: 1, IC: 0, IC2: 0}, expect: {S: 0, C: 1, C2: 1}}
+  - {id: a1b0c1, inputs: {IA: 1, IA2: 1, IB: 0, IB2: 0, IC: 1, IC2: 1}, expect: {S: 0, C: 1, C2: 1}}
+  - {id: a0b1c1, inputs: {IA: 0, IA2: 0, IB: 1, IB2: 1, IC: 1, IC2: 1}, expect: {S: 0, C: 1, C2: 1}}
+  - {id: a1b1c1, inputs: {IA: 1, IA2: 1, IB: 1, IB2: 1, IC: 1, IC2: 1}, expect: {S: 1, C: 1, C2: 1}}
+
+readout:
+  kind: named
+  inputs:
+    - {id: IA, label: a}
+    - {id: IB, label: b}
+    - {id: IC, label: c}
+  items:
+    - {id: S, label: 和 S}
+    - {id: C, label: 桁上り C}
+    - {id: C2, label: C2}
+  default_case: a1b0c1
+
+reset:
+  - すべての皿の水を捨てる
+  - 出力の器と捨て溝の受けを空にする
+
+assumptions:
+  - id: F1
+    text: 天秤の前提は level2e_xor_balance.yaml の B1〜B5 と同じ
+    status: ❓
+  - id: F2
+    text: 入力を分水口で分ける案は、分水の偏り ±10% で4ビット加算の正答率が 78% に落ちる。升で2回注ぐ・指し樋2本で写す方式なら、注ぐ量 ±0.1u で 99.9%（tools/adder_robustness.py）
+    status: 💭 シミュレーション
+  - id: F3
+    text: 多数決の天秤は、重さの差が ±0.5u か ±1.5u にしかならない（左 0〜3u とおもり 1.5u）。釣り合いが起きないので、受け口は左右2つでよい
+    status: 💭
+  - id: F4
+    text: 段階3（B2）は段階2（B1）の後。B1 の出力が B2 の左の皿に入ってから r2 を注ぐ。段階4 は段階1の後ならいつでもよい
+    status: 💭
+  - id: F6
+    text: 同じ竿に指し樋を2本つけても、竿の傾きは変わらない（指し樋は支点の下で竿と一緒に振れるだけ）。2本の樋の受け口が混ざらないように前後にずらして置く
+    status: ❓
+  - id: F5
+    text: おもり（1.5u ＝ 水 150mL 分の重さ）は、升で量った水と石や金属の分銅を天秤で釣り合わせて作る（度量衡の検査と同じ手順）
+    status: 💭
