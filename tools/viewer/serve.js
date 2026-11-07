@@ -1,5 +1,5 @@
 // tools/viewer を http://localhost:8765/ で配信するだけの小さなサーバ（外部パッケージなし）。
-// 使い方: node tools/viewer/serve.js   → ブラウザで http://localhost:8765/balance_xor.html
+// 使い方: node tools/viewer/serve.js   → ブラウザで http://localhost:8765/ （一覧）
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -10,7 +10,7 @@ const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; ch
 
 http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, "http://x").pathname);
-  if (p === "/") p = "/balance_xor.html";
+  if (p === "/") p = "/index.html";
   const file = path.join(ROOT, path.normalize(p));
   if (!file.startsWith(ROOT)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (err, data) => {
@@ -18,4 +18,4 @@ http.createServer((req, res) => {
     res.writeHead(200, { "Content-Type": TYPES[path.extname(file)] || "application/octet-stream" });
     res.end(data);
   });
-}).listen(PORT, "127.0.0.1", () => console.log(`viewer: http://localhost:${PORT}/balance_xor.html`));
+}).listen(PORT, "127.0.0.1", () => console.log(`viewer: http://localhost:${PORT}/`));

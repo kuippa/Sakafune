@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>酒船石の四則演算</title>
+<!--
+  酒船石の復元仮説（design/09「天秤を釣り合わせる盤」）を命令にした水のカウンタ機械で、四則演算を回すビューア。
+  計算の中身は sakafune_machine.js（Node のテスト test_arith.js と共通）。作成：Claude Opus 5.5（2026-11-07）。
+-->
+<style>
+  :root { --bg:#f7f2e7; --ink:#3a3226; --sub:#6a5e4c; --panel:#fffdf7; --edge:#c9bfa8; --water:#3d8fd6; --lit:#2f7fc8; --stone:#cfcbc1; --bad:#c0392b; --ok:#2e7d32; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:'Yu Gothic','Meiryo','Hiragino Sans',sans-serif; }
+  header { padding:12px 16px 0; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .note { color:var(--sub); font-size:13px; margin:0; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:10px 16px; }
+  .bar input[type=number] { width:56px; font:inherit; padding:3px; }
+  select, button { font:inherit; font-size:14px; padding:4px 10px; border:1px solid var(--edge); background:#fff; border-radius:6px; cursor:pointer; }
+  button:hover { background:#f0e8d6; }
+  .bar label { font-size:13px; display:flex; align-items:center; gap:6px; }
+  main { display:grid; grid-template-columns: minmax(260px, 1fr) 320px minmax(280px, 1.2fr); gap:12px; padding:0 16px 16px; }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+  .box { background:var(--panel); border:1px solid var(--edge); border-radius:8px; padding:10px 12px; }
+  .box h2 { font-size:14px; margin:0 0 8px; }
+  #prog div { font-size:13px; padding:4px 6px; border-radius:4px; margin:2px 0; border-left:4px solid transparent; }
+  #prog div.cur { background:#e3eefa; border-left-color:var(--lit); }
+  #prog small { color:var(--sub); display:block; }
+  #result { font-size:22px; font-weight:bold; color:var(--lit); margin:4px 0; }
+  #stat, #log { font-size:13px; line-height:1.6; font-variant-numeric:tabular-nums; }
+  #log { max-height:170px; overflow:auto; color:var(--sub); }
+  .ok { color:var(--ok); } .ng { color:var(--bad); }
+  svg text { font-family:'Yu Gothic','Meiryo',sans-serif; }
+</style>
+</head>
+<body>
+<header>
+  <h1>酒船石の盤で四則演算</h1>
+  <p class="note">設計09の仮説：酒船石1枚＝「r が 0 でなければ 1 つ 0 へ近づけて s へ移す。0 なら次へ」を実行する盤。盤を何枚か並べ、手番の水で順に動かして四則演算をする。人は毎回同じ手順（電源の水を注ぐ → 升を空ける）をくり返すだけ。</p>
+</header>
+<div class="bar">
+  <input id="a" type="number" min="0" max="20" value="7">
+  <select id="op"><option value="add">＋</option><option value="sub">−</option><option value="mul" selected>×</option><option value="div">÷</option></select>
+  <input id="b" type="number" min="0" max="20" value="3">
+  <button id="set">セット</button>
+  <button id="step">1手順</button>
+  <button id="run">▶ 実行</button>
+  <label>速さ <input id="spd" type="range" min="1" max="60" value="8"><span id="spdv"></span></label>
+  <label>升の精度 ± <input id="sd" type="range" min="0" max="0.15" step="0.01" value="0"><span id="sdv"></span></label>
+  <button id="all">全部試す</button>
+</div>
+<main>
+  <div class="box"><h2>プログラム（盤と駅）</h2><div id="prog"></div></div>
+  <div class="box"><h2 id="boardTitle">いまの盤</h2><svg id="board" viewBox="0 0 300 520" width="100%"></svg><div id="boardNote" class="note"></div></div>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div class="box"><h2>レジスタ（天秤。値 ＝ 北の皿 − 南の皿）</h2><svg id="regs" viewBox="0 0 520 260" width="100%"></svg></div>
+    <div class="box"><h2>結果</h2><div id="result"></div><div id="stat"></div></div>
+    <div class="box"><h2>記録</h2><div id="log"></div></div>
+  </div>
+</main>
+<script src="sakafune_machine.js"></script>
+<script>
+"use strict";
+const { PROGRAMS, Machine } = Sakafune;
+const $ = id => document.getElementById(id);
+let M, timer = null, logs = [];
+
+function regName(r) { return M.P.regs[r]; }
+function insText(ins, k) {
+  if (ins.op === "HALT") return `駅${k}　停止`;
+  if (ins.op === "INC") return `駅${k}　INC ${regName(ins.r)} に 1 足す → 駅${ins.next}`;
+  const to = ins.to ? `${regName(ins.to[0])} へ${ins.to[1] > 0 ? "" : "（引く）"}` : "捨てる";
+  return `駅${k}　盤：${regName(ins.r)} を 1 つ ${to}　≠0→駅${ins.nz}／0→駅${ins.z}`;
+}
+
+function setup() {
+  stop();
+  const key = $("op").value;
+  const a = Math.max(0, Math.min(20, +$("a").value || 0)), b = Math.max(0, Math.min(20, +$("b").value || 0));
+  M = new Machine(key, a, b, { sd: +$("sd").value });
+  logs = [`セット：a=${a}, b=${b}（${PROGRAMS[key].label}）。a, b の数だけ北の皿に水を入れ、駅0 に手番の水を置いた`];
+  draw();
+}
+
+function step() {
+  if (!M || M.halted()) { stop(); return; }
+  M.tick();
+  const L = M.last;
+  if (L) {
+    const ins = M.P.prog[L.k];
+    if (L.op === "INC") logs.unshift(`${M.ticks}：駅${L.k} INC → ${regName(L.r)} に 1`);
+    else {
+      const what = L.row === "center" ? `釣り合い → 中央の列（E1 → 駅${ins.z}）`
+        : `${L.tilt === "north" ? "北" : "南"}が重い → ${L.row === "south" ? "南" : "北"}の列（${regName(L.r)} を 0 へ 1、${ins.to ? regName(ins.to[0]) + " へ移す" : "捨てる"}、D → 駅${ins.nz}）`;
+      logs.unshift(`${M.ticks}：駅${L.k} 盤 ${regName(L.r)}：${what}`);
+    }
+  }
+  if (M.halted()) { logs.unshift(`${M.ticks}：停止`); stop(); }
+  logs = logs.slice(0, 60);
+  draw();
+}
+
+function run() {
+  if (timer) { stop(); return; }
+  if (!M || M.halted()) setup();
+  $("run").textContent = "■ 停止";
+  timer = setInterval(() => { for (let i = 0; i < Math.max(1, +$("spd").value / 30); i++) step(); }, 1000 / Math.min(30, +$("spd").value));
+}
+function stop() { if (timer) clearInterval(timer); timer = null; $("run").textContent = "▶ 実行"; }
+
+// ---------------- 描画 ----------------
+function draw() {
+  const cur = M.current();
+  $("prog").innerHTML = M.P.prog.map((ins, k) =>
+    `<div class="${k === cur ? "cur" : ""}">${insText(ins, k)}${ins.note ? `<small>${ins.note}</small>` : ""}</div>`).join("");
+  drawBoard();
+  drawRegs();
+  const v = M.values(), res = M.result();
+  const sym = M.P.symbol;
+  if (M.halted()) {
+    const ok = res.ok(M.a, M.b);
+    $("result").innerHTML = `${M.a} ${sym} ${M.b} = ${res.text} <span class="${ok ? "ok" : "ng"}">${ok ? "✓" : "✗（升の誤差で数え間違えた）"}</span>`;
+  } else if (M.key === "div" && M.b === 0 && M.ticks > 200) {
+    $("result").innerHTML = `${M.a} ÷ 0 は止まらない（b=0 を引き続ける）`;
+  } else $("result").textContent = `${M.a} ${sym} ${M.b} = …（計算中）`;
+  $("stat").innerHTML = `手順 ${M.ticks} 回　注いだ水 ${M.poured.toFixed(0)}u　下流（F）へ ${M.downstream.toFixed(0)}u<br>` +
+    `皿に溜まった水：` + M.N.map((n, r) => `${regName(r)} 北${n.toFixed(1)}・南${M.S[r].toFixed(1)}`).join("　");
+  $("log").innerHTML = logs.map(l => `<div>${l}</div>`).join("");
+}
+
+const PITS = { A1:[150,40], A2:[122,64], A3:[178,64], A4:[150,74], BL:[78,128], CL:[56,196], DL:[80,268], BR:[222,128], CR:[244,196], DR:[220,268],
+               E1:[150,210], E2:[150,290], G:[98,350], F:[150,470] };
+function drawBoard() {
+  const L = M.last, cur = M.current();
+  let ins = L ? M.P.prog[L.k] : M.P.prog[Math.max(0, cur)];
+  const k = L ? L.k : cur;
+  const lit = new Set();
+  if (L && L.op === "STEP") {
+    lit.add("A1");
+    if (L.row === "center") ["A4", "E1", "E2", "G", "F"].forEach(p => lit.add(p));
+    if (L.row === "south") ["A3", "BR", "CR", "DR"].forEach(p => lit.add(p));
+    if (L.row === "north") ["A2", "BL", "CL", "DL"].forEach(p => lit.add(p));
+  }
+  $("boardTitle").textContent = ins && ins.op === "STEP" ? `いまの盤：駅${k}（酒船石1枚）` : `いまの駅：駅${k}`;
+  const line = (a, b) => `<line x1="${PITS[a][0]}" y1="${PITS[a][1]}" x2="${PITS[b][0]}" y2="${PITS[b][1]}" stroke="${lit.has(a) && lit.has(b) ? "#2f7fc8" : "#8f897d"}" stroke-width="${lit.has(a) && lit.has(b) ? 6 : 4}" stroke-linecap="round"/>`;
+  let s = `<rect x="20" y="10" width="260" height="490" rx="10" fill="#cfcbc1" stroke="#6f6a60"/>` +
+          `<text x="150" y="8" font-size="11" text-anchor="middle" fill="#6a5e4c">東（高い）</text>` +
+          `<text x="150" y="515" font-size="11" text-anchor="middle" fill="#6a5e4c">西（低い）→ 下流</text>` +
+          `<text x="14" y="260" font-size="11" fill="#6a5e4c" transform="rotate(-90 14 260)">北</text>` +
+          `<text x="292" y="250" font-size="11" fill="#6a5e4c" transform="rotate(90 292 250)">南</text>`;
+  s += line("A2", "BL") + line("BL", "CL") + line("CL", "DL") + line("A3", "BR") + line("BR", "CR") + line("CR", "DR") +
+       line("A4", "E1") + line("E1", "E2") + line("E2", "F") + line("E2", "G") + line("A1", "A2") + line("A1", "A3") + line("A1", "A4");
+  s += `<ellipse cx="150" cy="250" rx="34" ry="62" fill="${lit.has("E1") ? "#bcd8f2" : "#b7b2a7"}" stroke="#6f6a60"/>`;
+  for (const [p, [x, y]] of Object.entries(PITS)) {
+    if (p === "E1" || p === "E2") { s += `<circle cx="${x}" cy="${y}" r="10" fill="${lit.has(p) ? "#3d8fd6" : "#a29d92"}"/>`; }
+    else {
+      const r = p.startsWith("A") ? 11 : (p === "F" ? 10 : 20);
+      s += `<circle cx="${x}" cy="${y}" r="${r}" fill="${lit.has(p) ? "#3d8fd6" : "#b7b2a7"}" stroke="#6f6a60" stroke-width="1.5"/>`;
+    }
+    s += `<text x="${x}" y="${y + 4}" font-size="10" text-anchor="middle" fill="${lit.has(p) ? "#fff" : "#3a3226"}">${p}</text>`;
+  }
+  $("board").innerHTML = s;
+  const map = ins && ins.op === "STEP"
+    ? `<br>この盤のつなぎ方：B → ${regName(ins.r)} の軽い側の皿、C → ${ins.to ? regName(ins.to[0]) + (ins.to[1] > 0 ? "" : "（引く）") : "捨て溝"}、D → 駅${ins.nz}（≠0）、E1 → 駅${ins.z}（=0）、E2 → F → 下流`
+    : "";
+  $("boardNote").innerHTML = (!L ? "「1手順」か「実行」で動かす" :
+    L.op === "INC" ? `駅${L.k} は盤ではなく、${regName(L.r)} の北の皿に 1u 足す駅` :
+    `指し樋は ${regName(L.r)} の竿にかかる。${L.row === "center" ? "釣り合い → 中央の列だけに水" : (L.tilt === "north" ? "北" : "南") + "が重い → 指し樋の先は反対の" + (L.row === "south" ? "南" : "北") + "の列へ"}`) + map;
+}
+
+function drawRegs() {
+  const n = M.N.length, w = 520 / n;
+  const maxW = Math.max(4, ...M.N, ...M.S);
+  let s = "";
+  M.N.forEach((_, r) => {
+    const cx = w * r + w / 2, py = 70, L = Math.min(48, w / 2 - 8);
+    const t = M.tilt(r), ang = t === "north" ? -12 : t === "south" ? 12 : 0;
+    const rad = ang * Math.PI / 180;
+    const lx = cx - L * Math.cos(rad), ly = py - L * Math.sin(rad), rx = cx + L * Math.cos(rad), ry = py + L * Math.sin(rad);
+    s += `<line x1="${cx}" y1="${py}" x2="${cx}" y2="${py + 40}" stroke="#c9a27a" stroke-width="5"/>`;
+    s += `<line x1="${lx}" y1="${ly}" x2="${rx}" y2="${ry}" stroke="#5a3a1a" stroke-width="5" stroke-linecap="round"/>`;
+    s += `<circle cx="${cx}" cy="${py}" r="4" fill="#2b1a0c"/>`;
+    for (const [x, y, amt, lab] of [[lx, ly, M.N[r], "北"], [rx, ry, M.S[r], "南"]]) {
+      const top = y + 30, h = 50, pw = Math.min(40, w / 3);
+      const lv = Math.min(1, amt / maxW) * (h - 4);
+      s += `<line x1="${x}" y1="${y}" x2="${x}" y2="${top}" stroke="#6a5e4c"/>`;
+      s += `<rect x="${x - pw / 2 + 2}" y="${top + h - 2 - lv}" width="${pw - 4}" height="${lv}" fill="#3d8fd6" opacity=".8"/>`;
+      s += `<rect x="${x - pw / 2}" y="${top}" width="${pw}" height="${h}" fill="none" stroke="#7a4a26" stroke-width="2"/>`;
+      s += `<text x="${x}" y="${top + h + 14}" font-size="10" text-anchor="middle" fill="#6a5e4c">${lab} ${amt.toFixed(1)}</text>`;
+    }
+    s += `<text x="${cx}" y="22" font-size="13" text-anchor="middle" font-weight="bold">${regName(r)}</text>`;
+    s += `<text x="${cx}" y="245" font-size="26" text-anchor="middle" font-weight="bold" fill="#2f7fc8">${M.value(r)}</text>`;
+  });
+  $("regs").innerHTML = s;
+}
+
+// ---------------- 全部試す ----------------
+function testAll() {
+  stop();
+  const sd = +$("sd").value, lines = [];
+  for (const key of Object.keys(PROGRAMS)) {
+    let ok = 0, tot = 0;
+    for (let a = 0; a <= 9; a++) for (let b = key === "div" ? 1 : 0; b <= 9; b++) {
+      const m = new Machine(key, a, b, { sd }); m.run(); tot++; ok += m.correct();
+    }
+    lines.push(`${PROGRAMS[key].label}：${ok}/${tot}`);
+  }
+  logs.unshift(`全部試す（a, b = 0〜9、升の精度 ±${sd}u）：${lines.join("　")}`);
+  draw();
+}
+
+$("set").onclick = setup; $("step").onclick = step; $("run").onclick = run; $("all").onclick = testAll;
+$("op").onchange = setup;
+const lab = () => { $("spdv").textContent = `${$("spd").value}回/秒`; $("sdv").textContent = `${(+$("sd").value).toFixed(2)}u`; };
+$("spd").oninput = () => { lab(); if (timer) { stop(); run(); } };
+$("sd").oninput = () => { lab(); };
+lab(); setup();
+window.__arith = { get M() { return M; }, setup, step, testAll };
+</script>
+</body>
+</html>
