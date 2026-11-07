@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>天秤XOR ビューア</title>
+<!--
+  天秤＋指し樋の XOR（design/05）の竿の動きを、画面で確かめるための簡易ビューア。
+  計算は tools/balance_dynamics.py と同じ式（竿1本の回転。水の流れそのものは計算しない）。
+  作成：Claude Opus 5.5（2026-11-07）。テスト段階のもので、見た目は最小限。
+-->
+<style>
+  :root { --bg:#f7f2e7; --ink:#3a3226; --sub:#6a5e4c; --panel:#fffdf7; --edge:#c9bfa8; --water:#3d8fd6; --wood:#7a4a26; --bad:#c0392b; --ok:#2e7d32; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:'Yu Gothic','Meiryo','Hiragino Sans',sans-serif; }
+  header { padding:12px 16px 4px; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .note { color:var(--sub); font-size:13px; margin:0; }
+  main { display:flex; flex-wrap:wrap; gap:12px; padding:8px 16px 16px; }
+  canvas { background:#fffdf7; border:1px solid var(--edge); border-radius:8px; max-width:100%; }
+  .side { flex:1 1 320px; min-width:300px; display:flex; flex-direction:column; gap:10px; }
+  .box { background:var(--panel); border:1px solid var(--edge); border-radius:8px; padding:10px 12px; }
+  .box h2 { font-size:14px; margin:0 0 8px; }
+  button { font:inherit; font-size:13px; padding:5px 10px; margin:2px; border:1px solid var(--edge); background:#fff; border-radius:6px; cursor:pointer; }
+  button:hover { background:#f0e8d6; }
+  label { display:flex; align-items:center; gap:8px; font-size:13px; margin:4px 0; }
+  label span.v { width:70px; text-align:right; font-variant-numeric:tabular-nums; }
+  input[type=range] { flex:1; }
+  table { border-collapse:collapse; font-size:13px; width:100%; }
+  td, th { border-bottom:1px solid #eee3cc; padding:3px 6px; text-align:left; }
+  .ok { color:var(--ok); font-weight:bold; } .ng { color:var(--bad); font-weight:bold; }
+  #stat { font-size:13px; line-height:1.6; font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<header>
+  <h1>天秤と指し樋の XOR ― 竿の動きの確認</h1>
+  <p class="note">a を左の皿、b を右の皿へ注ぎ、竿が落ち着いたら予備の水 c を注ぐ。指し樋が中央を指せば Y0（XNOR）、左右なら Y1（XOR）。寸法は仮の値（tools/balance_dynamics.py と同じ）。</p>
+</header>
+<main>
+  <canvas id="cv" width="760" height="690"></canvas>
+  <div class="side">
+    <div class="box">
+      <h2>手で操作</h2>
+      <button id="pa">a を注ぐ（左）</button><button id="pb">b を注ぐ（右）</button><button id="pc">c を注ぐ</button>
+      <button id="rs">リセット</button>
+      <label>再生の速さ <input id="spd" type="range" min="0.1" max="2" step="0.1" value="1"><span class="v" id="spdv"></span></label>
+    </div>
+    <div class="box">
+      <h2>条件</h2>
+      <label>1u を注ぐ時間 <input id="pt" type="range" min="0.2" max="4" step="0.1" value="2"><span class="v" id="ptv"></span></label>
+      <label>注ぐ高さ <input id="ph" type="range" min="0.02" max="0.5" step="0.01" value="0.1"><span class="v" id="phv"></span></label>
+      <label>減衰比 ζ <input id="zt" type="range" min="0.01" max="1.2" step="0.01" value="0.3"><span class="v" id="ztv"></span></label>
+      <label>重りの深さ ×<input id="hm" type="range" min="0.3" max="2.5" step="0.05" value="1"><span class="v" id="hmv"></span></label>
+      <label>止め木の反発 e <input id="ee" type="range" min="0" max="0.95" step="0.05" value="0.3"><span class="v" id="eev"></span></label>
+      <label>左の皿の狂い <input id="bias" type="range" min="-0.4" max="0.4" step="0.05" value="0"><span class="v" id="biasv"></span></label>
+      <button id="slow">ゆっくり注ぐ</button><button id="fast">一気に注ぐ</button><button id="still">揺れ止めなし</button>
+    </div>
+    <div class="box">
+      <h2>4通りを自動で試す</h2>
+      <label>注ぎ終えてから c までの待ち <input id="wt" type="range" min="0" max="8" step="0.25" value="0.5"><span class="v" id="wtv"></span></label>
+      <button id="run">4通りを実行</button>
+      <table id="res"><tr><th>a</th><th>b</th><th>期待</th><th>c が入った先</th><th>判定</th></tr></table>
+    </div>
+    <div class="box"><h2>いまの状態</h2><div id="stat"></div></div>
+  </div>
+</main>
+<script>
+"use strict";
+const G = 9.8, DT = 5e-4;
+const $ = id => document.getElementById(id);
+
+// ---------------- 計算（balance_dynamics.py と同じ式） ----------------
+let P;
+function makeParams() {
+  const p = { u:0.1, L:0.15, m_beam:0.05, m_pan:0.02, m_bal:0.5, r:0.10, w:0.02, stop_deg:25,
+              e:+$("ee").value, zeta:+$("zt").value, q:0.1 / +$("pt").value, H:+$("ph").value,
+              q_c:0.05, transit:0.2, bias:+$("bias").value * 0.1 };
+  const thEdge = Math.asin(p.w / p.r);
+  p.h = 0.5 * p.u * p.L / (p.m_bal * Math.tan(thEdge)) * +$("hm").value;
+  p.k = p.m_bal * G * p.h;
+  const I0 = p.m_beam * p.L ** 2 / 3 + p.m_bal * p.h ** 2 + (2 * p.m_pan + p.u) * p.L ** 2;
+  p.c = 2 * p.zeta * Math.sqrt(p.k * I0);
+  p.period = 2 * Math.PI * Math.sqrt(I0 / p.k);
+  return p;
+}
+
+let S;
+function reset() {
+  S = { t:0, th:0, om:0, mL:0, mR:0, pours:[], recv:{ Y1L:0, Y0:0, Y1R:0 }, hist:[], events:[] };
+}
+function region(th) { const x = P.r * Math.sin(th); return Math.abs(x) < P.w ? "Y0" : (x > 0 ? "Y1R" : "Y1L"); }
+function pour(to) {   // to: "L" | "R" | "P"
+  const q = to === "P" ? P.q_c : P.q;
+  S.pours.push({ to, q, dur: P.u / q, tau: 0 });
+}
+function step() {
+  let FL = 0, FR = 0, mPtr = 0;
+  const vFall = Math.sqrt(2 * G * P.H);
+  for (const p of S.pours) {
+    if (p.to !== "P") {
+      if (p.tau < p.dur) {
+        if (p.to === "L") { S.mL += p.q * DT; FL += p.q * vFall; } else { S.mR += p.q * DT; FR += p.q * vFall; }
+      }
+    } else if (p.tau < p.dur + P.transit) {
+      mPtr += p.q * Math.min(P.transit, p.tau, p.dur + P.transit - p.tau);
+      if (p.tau >= P.transit) S.recv[region(S.th)] += p.q * DT;   // 樋の先から出る水は、いまの向きの受け口へ
+    }
+    p.tau += DT;
+  }
+  S.pours = S.pours.filter(p => p.tau < p.dur + (p.to === "P" ? P.transit : 0));
+  const I = P.m_beam * P.L ** 2 / 3 + P.m_bal * P.h ** 2 + (2 * P.m_pan + S.mL + S.mR) * P.L ** 2 + mPtr * (P.r / 2) ** 2;
+  const tau = ((S.mL + P.bias - S.mR) * G + FL - FR) * P.L * Math.cos(S.th)
+            - (P.k + mPtr * G * P.r / 2) * Math.sin(S.th) - P.c * S.om;
+  S.om += tau / I * DT;
+  S.th += S.om * DT;
+  const stop = P.stop_deg * Math.PI / 180;
+  if (S.th > stop) { S.th = stop; if (S.om > 0) S.om = -P.e * S.om; }
+  else if (S.th < -stop) { S.th = -stop; if (S.om < 0) S.om = -P.e * S.om; }
+  S.t += DT;
+  S.mPtr = mPtr;
+  while (S.events.length && S.events[0].t <= S.t) S.events.shift().fn();
+}
+
+// ---------------- 自動テスト（4通り） ----------------
+let queue = [];
+function runCase(a, b, wait, done) {
+  P = makeParams(); reset();
+  let t = 0;
+  const ev = (tt, fn) => S.events.push({ t: tt, fn });
+  if (a) { ev(t, () => pour("L")); t += P.u / P.q + 0.5; }
+  if (b) { ev(t, () => pour("R")); t += P.u / P.q + 0.5; }
+  const tIn = Math.max(t - 0.5, 0), tc = tIn + wait;
+  ev(tc, () => pour("P"));
+  ev(tc + P.u / P.q_c + P.transit + 0.05, () => {
+    const got = Object.entries(S.recv).filter(([, v]) => v > 1e-4).map(([k]) => k);
+    done(got);
+  });
+  S.events.sort((x, y) => x.t - y.t);
+}
+function runAll() {
+  const tb = $("res");
+  while (tb.rows.length > 1) tb.deleteRow(1);
+  queue = [[0, 0], [1, 0], [0, 1], [1, 1]];
+  next();
+  function next() {
+    if (!queue.length) return;
+    const [a, b] = queue.shift();
+    runCase(a, b, +$("wt").value, got => {
+      const want = (a ^ b) ? "Y1" : "Y0";
+      const names = got.map(g => g === "Y0" ? "Y0（中央）" : "Y1（" + (g === "Y1L" ? "左" : "右") + "）");
+      const ok = got.length > 0 && got.every(g => g.startsWith(want)) && (want === "Y1" ? !got.includes("Y0") : true);
+      const row = tb.insertRow();
+      row.innerHTML = `<td>${a}</td><td>${b}</td><td>${want}</td><td>${names.join("・") || "なし"}</td>` +
+                      `<td class="${ok ? "ok" : "ng"}">${ok ? "OK" : "NG"}</td>`;
+      setTimeout(next, 600);
+    });
+  }
+}
+
+// ---------------- 描画 ----------------
+const cv = $("cv"), cx = cv.getContext("2d");
+const SC = 1500;                 // 1m = 1500px
+const PX = 380, PY = 190;        // 支点の位置
+function rot(x, y, th) { const f = -th; return [PX + x * Math.cos(f) - y * Math.sin(f), PY + x * Math.sin(f) + y * Math.cos(f)]; }
+function draw() {
+  cx.clearRect(0, 0, cv.width, cv.height);
+  cx.font = "13px 'Yu Gothic','Meiryo',sans-serif";
+  const L = P.L * SC, r = P.r * SC, h = P.h * SC;
+  // 支柱
+  cx.fillStyle = "#c9a27a"; cx.fillRect(PX - 6, PY - 120, 12, 120);
+  cx.fillRect(PX - 70, PY - 128, 140, 10);
+  // 止め木
+  const st = P.stop_deg * Math.PI / 180;
+  for (const s of [-1, 1]) {
+    const [x1, y1] = rot(s * L * 0.85, 0, s < 0 ? st : -st);
+    cx.fillStyle = "#8a7a66"; cx.fillRect(x1 - 8, y1 + (s < 0 ? 6 : -0) + 4, 16, 10);
+  }
+  // 受け口
+  const ry = PY + r + 60, w = P.w * SC;
+  const bins = [["Y1L", PX - w - 120, PX - w], ["Y0", PX - w, PX + w], ["Y1R", PX + w, PX + w + 120]];
+  for (const [k, x0, x1] of bins) {
+    cx.strokeStyle = "#7a4a26"; cx.lineWidth = 2; cx.strokeRect(x0 + 2, ry, x1 - x0 - 4, 70);
+    const lv = Math.min(1, S.recv[k] / P.u) * 66;
+    cx.fillStyle = "rgba(61,143,214,.7)"; cx.fillRect(x0 + 3, ry + 70 - lv, x1 - x0 - 6, lv);
+    cx.fillStyle = "#3a3226"; cx.textAlign = "center";
+    cx.fillText(k === "Y0" ? "Y0 中央（XNOR）" : "Y1（XOR）", (x0 + x1) / 2, ry + 90);
+    cx.fillText((S.recv[k] / P.u).toFixed(2) + "u", (x0 + x1) / 2, ry + 108);
+  }
+  // 中央の縁（指し樋の先の高さ）
+  cx.setLineDash([4, 4]); cx.strokeStyle = "#c0392b"; cx.lineWidth = 1;
+  for (const s of [-1, 1]) { cx.beginPath(); cx.moveTo(PX + s * w, PY + r - 10); cx.lineTo(PX + s * w, ry); cx.stroke(); }
+  cx.setLineDash([]);
+  // 指し樋（重りを兼ねる）
+  const [tx, ty] = rot(0, r, S.th), [bx, by] = rot(0, h, S.th);
+  cx.strokeStyle = "#6b8f2a"; cx.lineWidth = 9; cx.lineCap = "round";
+  cx.beginPath(); cx.moveTo(PX, PY); cx.lineTo(tx, ty); cx.stroke();
+  cx.fillStyle = "#4b4740"; cx.beginPath(); cx.arc(bx, by, 11, 0, 7); cx.fill();
+  cx.fillStyle = "#3a3226"; cx.textAlign = "left"; cx.fillText("重り", bx + 14, by + 4);
+  // 竿
+  const [lx, ly] = rot(-L, 0, S.th), [rx2, ry2] = rot(L, 0, S.th);
+  cx.strokeStyle = "#5a3a1a"; cx.lineWidth = 7;
+  cx.beginPath(); cx.moveTo(lx, ly); cx.lineTo(rx2, ry2); cx.stroke();
+  cx.fillStyle = "#2b1a0c"; cx.beginPath(); cx.arc(PX, PY, 6, 0, 7); cx.fill();
+  // 皿（吊りひもで竿の端から真下に）
+  const pans = [[lx, ly, S.mL, "左の皿 a"], [rx2, ry2, S.mR, "右の皿 b"]];
+  for (const [x, y, m, lab] of pans) {
+    const top = y + 80, pw = 70, ph = 46;
+    cx.strokeStyle = "#6a5e4c"; cx.lineWidth = 1;
+    cx.beginPath(); cx.moveTo(x, y); cx.lineTo(x - pw / 2, top); cx.moveTo(x, y); cx.lineTo(x + pw / 2, top); cx.stroke();
+    const lv = Math.min(1, m / (2 * P.u)) * (ph - 4);
+    cx.fillStyle = "rgba(61,143,214,.75)"; cx.fillRect(x - pw / 2 + 3, top + ph - 2 - lv, pw - 6, lv);
+    cx.strokeStyle = "#7a4a26"; cx.lineWidth = 2.5;
+    cx.beginPath(); cx.moveTo(x - pw / 2, top); cx.lineTo(x - pw / 2 + 6, top + ph); cx.lineTo(x + pw / 2 - 6, top + ph); cx.lineTo(x + pw / 2, top); cx.stroke();
+    cx.fillStyle = "#3a3226"; cx.textAlign = "center";
+    cx.fillText(`${lab}  ${(m / P.u).toFixed(2)}u`, x, top + ph + 18);
+  }
+  // 注いでいる水
+  cx.strokeStyle = "rgba(61,143,214,.85)"; cx.lineCap = "butt";
+  for (const p of S.pours) {
+    if (p.to === "P") {
+      if (p.tau < p.dur) { cx.lineWidth = 4; cx.beginPath(); cx.moveTo(PX, 20); cx.lineTo(PX, PY - 8); cx.stroke(); }
+      if (p.tau >= P.transit) { cx.lineWidth = 3; cx.beginPath(); cx.moveTo(tx, ty); cx.lineTo(tx, ry + 10); cx.stroke(); }
+    } else if (p.tau < p.dur) {
+      const [x, y] = p.to === "L" ? [lx, ly] : [rx2, ry2];
+      cx.lineWidth = 2 + p.q * 20; cx.beginPath(); cx.moveTo(x, 20); cx.lineTo(x, y + 110); cx.stroke();
+    }
+  }
+  cx.fillStyle = "#6a5e4c"; cx.textAlign = "center"; cx.fillText("c の漏斗（支点の真上、竿とは別に固定）", PX, 16);
+  // グラフ：指し樋の先のずれ
+  const gx = 20, gy = 570, gw = 720, gh = 100;
+  cx.strokeStyle = "#c9bfa8"; cx.lineWidth = 1; cx.strokeRect(gx, gy, gw, gh);
+  const xMax = P.r * Math.sin(st);
+  const yOf = x => gy + gh / 2 - x / xMax * (gh / 2 - 4);
+  cx.setLineDash([4, 4]); cx.strokeStyle = "#c0392b";
+  for (const s of [-1, 1]) { cx.beginPath(); cx.moveTo(gx, yOf(s * P.w)); cx.lineTo(gx + gw, yOf(s * P.w)); cx.stroke(); }
+  cx.setLineDash([]);
+  const span = 12;
+  cx.strokeStyle = "#2f7fc8"; cx.lineWidth = 1.5; cx.beginPath();
+  S.hist.forEach(([t, x], i) => { const X = gx + gw - (S.t - t) / span * gw; i ? cx.lineTo(X, yOf(x)) : cx.moveTo(X, yOf(x)); });
+  cx.stroke();
+  cx.fillStyle = "#6a5e4c"; cx.textAlign = "left";
+  cx.fillText("指し樋の先の左右のずれ（直近12秒）。赤い点線の間＝中央の受け口", gx + 6, gy - 6);
+  // 状態
+  const x = P.r * Math.sin(S.th) * 100;
+  $("stat").innerHTML =
+    `時刻 ${S.t.toFixed(2)} 秒<br>竿の角度 ${(S.th * 180 / Math.PI).toFixed(1)}°（＋＝左が下）<br>` +
+    `指し樋の先 ${x.toFixed(2)}cm → <b>${region(S.th) === "Y0" ? "中央（Y0）" : "左右（Y1）"}</b><br>` +
+    `揺れの周期 約${P.period.toFixed(2)}秒、重りの深さ ${(P.h * 100).toFixed(1)}cm<br>` +
+    `中央に入る重さの差 ±${(P.k * Math.tan(Math.asin(P.w / P.r)) / (G * P.L) / P.u).toFixed(2)}u 未満`;
+}
+
+// ---------------- ループ・操作 ----------------
+let last = performance.now();
+function loop(now) {
+  const real = Math.min(0.05, (now - last) / 1000); last = now;
+  const n = Math.round(real * +$("spd").value / DT);
+  for (let i = 0; i < n; i++) step();
+  S.hist.push([S.t, P.r * Math.sin(S.th)]);
+  while (S.hist.length && S.t - S.hist[0][0] > 12) S.hist.shift();
+  draw();
+  requestAnimationFrame(loop);
+}
+function syncLabels() {
+  $("spdv").textContent = "×" + (+$("spd").value).toFixed(1);
+  $("ptv").textContent = (+$("pt").value).toFixed(1) + " 秒";
+  $("phv").textContent = Math.round(+$("ph").value * 100) + " cm";
+  $("ztv").textContent = (+$("zt").value).toFixed(2);
+  $("hmv").textContent = (+$("hm").value).toFixed(2);
+  $("eev").textContent = (+$("ee").value).toFixed(2);
+  $("biasv").textContent = (+$("bias").value).toFixed(2) + "u";
+  $("wtv").textContent = (+$("wt").value).toFixed(2) + " 秒";
+}
+document.querySelectorAll("input").forEach(el => el.addEventListener("input", () => { syncLabels(); P = makeParams(); }));
+$("pa").onclick = () => pour("L"); $("pb").onclick = () => pour("R"); $("pc").onclick = () => pour("P");
+$("rs").onclick = () => { queue = []; P = makeParams(); reset(); };
+$("run").onclick = runAll;
+const preset = (pt, ph, zt) => { if (pt) $("pt").value = pt; if (ph) $("ph").value = ph; if (zt) $("zt").value = zt; syncLabels(); P = makeParams(); };
+$("slow").onclick = () => preset(2, 0.1, null);
+$("fast").onclick = () => preset(0.3, 0.3, null);
+$("still").onclick = () => preset(null, null, 0.02);
+syncLabels(); P = makeParams(); reset(); requestAnimationFrame(loop);
+// 外から確かめるため（テスト用）
+window.__viewer = { get S() { return S; }, get P() { return P; }, runCase };
+</script>
+</body>
+</html>
