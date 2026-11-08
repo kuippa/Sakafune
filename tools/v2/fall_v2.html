@@ -45,7 +45,7 @@
 <body>
 <header>
   <h1>フォールモデル v2 ― 足し算と引き算を同じ装置で</h1>
-  <p class="note">v2 草案（設計11）。桶はすべて地面に固定し、a・b・手番レジスタは浮きと竿で水位を読む（浮き比較器）。足し算と引き算の違いは、スタート前に倒す<b>切り替えレバー1本</b>（SW1・SW2 が連動）だけ。答えは<b>「正の答え」か「負の答え」の桶の一方だけに、答えの量の水</b>として出る。</p>
+  <p class="note">v2 草案（設計11）。入力は <b>INP 入力器</b>（1u の升の列に仕切りを差す）で a・b の槽へ送る。桶はすべて地面に固定し、a・b・手番レジスタは浮きと竿で水位を読む（浮き比較器）。足し算と引き算の違いは、スタート前に倒す<b>切り替えレバー1本</b>（SW1・SW2 が連動）だけ。答えは<b>「正の答え」か「負の答え」の桶の一方だけに、答えの量の水</b>として出る。</p>
 </header>
 <div class="bar">
   <input id="a" type="number" min="0" max="20" value="3" aria-label="a">
@@ -91,7 +91,7 @@ const BLUE = "#2f7fc8", GREY = "#a39d92";
 const TANK = { top: 600, h: 130, w: 62 };
 const TX = { aP: 120, aM: 200, bP: 330, bM: 410, outP: 580, outM: 680, pcP: 960, pcM: 1040 };
 const ST = [{ cx: 330, w: 210 }, { cx: 580, w: 200 }, { cx: 800, w: 170 }, { cx: 960, w: 110 }];
-const Y = { src: 28, clk: 100, dcd: 145, bins: 205, st: 245, stH: 70 };
+const Y = { src: 28, clk: 110, dcd: 150, bins: 210, st: 250, stH: 70 };
 // 振り分け器（RTE）の位置と、その出口
 const R = {
   sw1: [300, 350],                    // 駅0 の入口の SW1
@@ -168,9 +168,27 @@ function axle(from, to, label) {
 }
 
 // ---------------- 描画 ----------------
+// INP 入力器：1u のすり切り升の列。電源槽から順に満ち、仕切り（目盛り n）から先は捨て槽へ。栓を一度に開けて＋槽へ流す
+const RACK = { n: 20, x0: 470, dx: 17, w: 13, h: 12 };
+function inputRack(y, n, label, target, isLoad, released) {
+  let s = `<text x="${RACK.x0 - 8}" y="${y + 10}" font-size="11" text-anchor="end" font-weight="bold">${label}</text>`;
+  for (let i = 0; i < RACK.n; i++) {
+    const x = RACK.x0 + i * RACK.dx, full = !released && i < n;
+    s += `<path d="M${x},${y} L${x + 2},${y + RACK.h} L${x + RACK.w - 2},${y + RACK.h} L${x + RACK.w},${y}" fill="${full ? "#3d8fd6" : "#eceae4"}" stroke="#6f6a60" stroke-width="1.2"/>`;
+    if ((i + 1) % 5 === 0) s += `<text x="${x + RACK.w / 2}" y="${y - 3}" font-size="8" text-anchor="middle" fill="#8f897d">${i + 1}</text>`;
+  }
+  const px = RACK.x0 + n * RACK.dx - 2;
+  s += `<rect x="${px}" y="${y - 8}" width="4" height="${RACK.h + 14}" fill="#c0392b"/>
+        <text x="${px + 6}" y="${y + RACK.h + 12}" font-size="9" fill="#c0392b">仕切り ${n}</text>`;
+  // 栓を開けると、仕切りまでの升の水が＋槽へ
+  s += flow(RACK.x0 + 4, y + RACK.h + 2, target, TANK.top - 74, isLoad, isLoad ? `${n}u` : "");
+  return s;
+}
+
 function draw() {
   const p = P || M.plan();
-  const act = ph => p && p.kind !== "halt" && phase >= ph;
+  const isLoad = p && p.kind === "load";
+  const act = ph => p && p.kind !== "halt" && !isLoad && phase >= ph;
   const maxV = Math.max(10, M.aP, M.aM, M.bP, M.bM, M.outP, M.outM, M.pcP + 2, M.pcM);
   let s = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${BLUE}"/></marker></defs>`;
   [["いちばん高い：SRC", Y.src + 10], ["CLK", Y.clk], ["DCD", Y.dcd + 25], ["駅", Y.st + 20], ["切り替え器・振り分け器", R.a0[1]], ["いちばん低い：固定の槽", TANK.top + 70]]
@@ -181,6 +199,10 @@ function draw() {
   s += `<rect x="40" y="${Y.src}" width="110" height="52" fill="#eceae4" stroke="#6f6a60" stroke-width="2"/>
         <rect x="42" y="${Y.src + 10}" width="106" height="40" fill="#3d8fd6" opacity=".8"/>
         <text x="95" y="${Y.src - 6}" font-size="12" text-anchor="middle" font-weight="bold">SRC 電源槽（漏刻）</text>` + flow(140, Y.src + 48, 170, Y.clk - 10, act(1));
+  s += `<text x="${RACK.x0}" y="${Y.src - 8}" font-size="12" font-weight="bold">INP 入力器（1u のすり切り升の列。スタート前に仕切りを目盛りに差す）</text>` +
+       `<path d="M150,${Y.src + 20} L${RACK.x0 - 2},${Y.src + 20}" fill="none" stroke="${GREY}" stroke-width="1.2" stroke-dasharray="4 5"/>` +
+       inputRack(Y.src + 18, M.a0, "a", TX.aP, isLoad && phase >= 1, M.loaded) +
+       inputRack(Y.src + 58, M.b0, "b", TX.bP, isLoad && phase >= 1, M.loaded);
   const tipped = phase === 1;
   s += `<g transform="rotate(${tipped ? 28 : -14} 200 ${Y.clk})"><rect x="158" y="${Y.clk - 9}" width="84" height="18" rx="9" fill="#cfe0a6" stroke="#6b8f2a" stroke-width="2"/>
         <rect x="161" y="${Y.clk - 6}" width="${tipped ? 0 : 38}" height="12" fill="#3d8fd6" opacity=".8"/></g><circle cx="200" cy="${Y.clk}" r="4" fill="#4a2e12"/>
@@ -243,7 +265,7 @@ function draw() {
   s += axle(fa.pivot, R.a0) + axle(fa.pivot, R.r2) + axle(fb.pivot, R.b0) + axle(fb.pivot, R.r1) + axle(fp.pivot, [120, Y.dcd + 4]);
 
   // いまの拍で水が槽へ入る道（遅延升を通る）
-  if (p && p.kind !== "halt") {
+  if (p && p.kind !== "halt" && !isLoad) {
     let o = outlet(p);
     p.dep.forEach((d, i) => {
       let from = o;
@@ -258,6 +280,9 @@ function draw() {
 
 function caption(p) {
   if (!p) return "セットしてください。";
+  if (p.kind === "load") return phase === 0
+    ? `<b>入力器（INP）</b>：電源槽から 1u のすり切り升の列に水が入り、仕切りまでの升が満ちている（a ＝ ${M.a0} 個、b ＝ ${M.b0} 個）。仕切りから先へ溢れた水は捨て槽へ。「1拍」で栓を開けて流す。`
+    : `<b>入力（INP）</b>：入力器の栓を一度に開ける。仕切りまでの升の水が、a の＋槽へ <b>${M.a0}u</b>、b の＋槽へ <b>${M.b0}u</b> 流れ込む。人がしたのは「仕切りを目盛りに差す」ことだけ。`;
   if (p.kind === "halt") {
     const v = M.value();
     return `<b>停止</b>：答え ＝ <b>${v}</b>。${v < 0 ? `<b>負の答えの桶</b>に ${M.outM.toFixed(0)}u` : `<b>正の答えの桶</b>に ${M.outP.toFixed(0)}u`}だけが入っている（もう一方は空）。a・b のレジスタは 0 に戻った。読む人は引き算をしなくてよい。`;
@@ -301,12 +326,13 @@ function setup() {
   stop();
   const a = Math.max(0, Math.min(20, +$("a").value || 0)), b = Math.max(0, Math.min(20, +$("b").value || 0));
   M = new AddSubMachine(a, b, mode(), { sd: +$("sd").value });
-  logs = [`セット：a=${a}, b=${b}、切り替えレバーを${M.mode === "add" ? "足し算" : "引き算"}に倒した。a・b の＋槽に水を入れ、電源槽を満たした（ここから先は人の手なし）`];
+  logs = [`セット：入力器の仕切りを a=${a}, b=${b} の目盛りに差し、切り替えレバーを${M.mode === "add" ? "足し算" : "引き算"}に倒した。電源槽を満たした（ここから先は人の手なし）`];
   draw();
 }
 function applyTick() {
   const p = M.plan();
   M.tick();
+  if (p.kind === "load") { logs.unshift(`入力器の栓を開けた：a の＋槽へ ${M.a0}u、b の＋槽へ ${M.b0}u`); return; }
   const msg = { bypass: "素通り", a0: "a = 0 → 駅1", b0: "b = 0 → 駅2", both: "a・b から 1 ずつ相殺", z: "0 → 次の駅", nz: "1 を答えの桶へ" }[p.kind];
   logs.unshift(`${M.ticks}：${STATIONS[p.k].name}：${msg}`);
   if (M.halted()) logs.unshift(`${M.ticks}：停止。答え ${M.value()}`);
@@ -320,7 +346,8 @@ async function stepDetailed() {
   try {
     P = m.plan();
     const dt = 2600 / +$("spd").value;
-    for (phase = 1; phase <= 4; phase++) { draw(); await wait(dt); if (!alive()) return false; }
+    const last = P.kind === "load" ? 1 : 4;
+    for (phase = 1; phase <= last; phase++) { draw(); await wait(dt); if (!alive()) return false; }
     applyTick(); phase = 0; P = null; draw();
     return true;
   } finally { if (my === animId) busy = false; }

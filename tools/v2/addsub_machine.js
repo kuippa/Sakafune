@@ -34,12 +34,23 @@
 
   class AddSubMachine {
     // mode：切り替えレバー（"add" / "sub"）。SW1（駅0 の入口）と SW2（駅1 の出口）が連動する。sd：定量升の精度
+    // 入力は INP 入力器で入れる：1u のすり切り升 RACK 個の列に、電源槽から順に水を満たし、仕切り（目盛り n）から
+    // 先は捨て槽へ。スタートで升の列の栓を一度に開け、レジスタの＋槽へ n u を流す（升1つずつに精度 sd の誤差）。
     constructor(a, b, mode, { sd = 0 } = {}) {
       this.a0 = a; this.b0 = b; this.mode = mode; this.sd = sd;
-      this.aP = a; this.aM = 0; this.bP = b; this.bM = 0;   // レジスタ（浮き比較器つき）
+      this.aP = 0; this.aM = 0; this.bP = 0; this.bM = 0;   // レジスタ（浮き比較器つき）。入力器で満たす
       this.outP = 0; this.outM = 0;                          // 答えの桶（正・負）
       this.pcP = 0; this.pcM = 0;                            // 手番レジスタ
+      this.loaded = false;                                   // 入力器の栓を開けたか
       this.ticks = 0; this.used = 0; this.pulse = 3;
+    }
+    // 入力器：仕切りまでの n 個の升（各 1u）を、一度に＋槽へ流す
+    loadInputs() {
+      if (this.loaded) return;
+      for (let i = 0; i < this.a0; i++) this.aP += this.q(1);
+      for (let i = 0; i < this.b0; i++) this.bP += this.q(1);
+      this.used += this.a0 + this.b0;
+      this.loaded = true;
     }
     q(u) { return this.sd ? u * (1 + gauss() * this.sd) : u; }
     pc() { return Math.round(this.pcP - this.pcM); }
@@ -52,6 +63,7 @@
 
     // 次の1拍で何が起きるか（状態は変えない）。kind は振り分けの結果、dep は槽へ入れる水
     plan() {
+      if (!this.loaded) return { k: -1, kind: "load", dep: [{ to: "aP", amt: this.a0 }, { to: "bP", amt: this.b0 }] };
       const k = this.pc();
       if (k >= 3) return { k, kind: "halt", dep: [] };
       const pcTo = n => ({ to: "pcP", amt: n });
@@ -71,6 +83,7 @@
     tick() {
       const p = this.plan();
       if (p.kind === "halt") return false;
+      if (p.kind === "load") { this.loadInputs(); return true; }   // 入力は拍に数えない
       this.used += this.pulse;
       for (const d of p.dep) this[d.to] += this.q(d.amt);
       this.ticks++;

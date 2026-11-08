@@ -1,5 +1,6 @@
 // v2 草案（design/11）のテスト：足し算・引き算が、同じ装置と連動した切り替え器で回るか。
 // 答えが「1つの桶に、答えの量だけ」入っていることも確かめる（読む人が引き算をしなくてよいこと）。
+// 入力は INP 入力器（1u の升の列と仕切り）で入れるので、入力にも升の誤差が入る。
 // 使い方: node tools/v2/test_addsub.js
 const { AddSubMachine } = require("./addsub_machine.js");
 
