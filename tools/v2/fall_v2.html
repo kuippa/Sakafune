@@ -72,7 +72,7 @@
   </div>
   <div class="box">
     <div id="caption"></div>
-    <svg id="map" viewBox="0 0 1240 1150" width="100%"></svg>
+    <svg id="map" viewBox="0 0 1240 1300" width="100%"></svg>
     <div class="legend">
       <span>横から見た図（上が高い）</span><span style="color:#8e44ad">● 紫：人（役割と、いましていること）</span><span>▬ 灰：固定した槽・升</span>
       <span>━ 茶：浮き比較器の竿／━ 緑：振り分け器・樋・添水（軽い可動部）</span><span>◆ 橙：切り替え器（レバー1本で連動）</span><span>▽ SPL：量り分け器。≠0 の出口の水を 1u＋1u に分け、別々の水路へ出す</span>
@@ -105,7 +105,7 @@ const R = {
   r1: [520, 540], sw2: [730, 700],                    // 駅1：b は 0 か（b の列の上）→ SW2（答えの桶の真上）
   r2: [830, 540],                                     // 駅2：a は 0 か
 };
-const EV = { sozu: [880, 1040], person: [955, 990] };   // カウント係と評価用の添水
+const EV = { sozu: [730, 1225], person: [1035, 1245], top: 1150 };   // 最下段：評価（カウント係と評価用の計数添水）。槽の段とは分ける
 // 折れ線の水路。hot なら青い矢印
 function pipe(pts, hot, label) {
   const d = "M" + pts.map(q => q.join(",")).join(" L");
@@ -226,7 +226,7 @@ function draw() {
   const maxV = Math.max(10, M.aP, M.aM, M.bP, M.bM, M.outP, M.outM, M.pcP + 2, M.pcM);
   let s = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${BLUE}"/></marker>
            <marker id="ao" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b9770e"/></marker></defs>`;
-  [["いちばん高い：SRC", Y.src + 10], ["計数添水・元栓", Y.cnt], ["CLK・DCD", Y.dcd + 10], ["駅", Y.st + 20], ["切り替え器・振り分け器", R.a0[1]], ["いちばん低い：固定の槽", TANK.top + 70]]
+  [["いちばん高い：SRC", Y.src + 10], ["計数添水・元栓", Y.cnt], ["CLK・DCD", Y.dcd + 10], ["駅", Y.st + 20], ["切り替え器・振り分け器", R.a0[1]], ["いちばん低い：固定の槽", TANK.top + 70], ["評価（停止後）", EV.top + 70]]
     .forEach(([t, y]) => s += `<text x="1236" y="${y}" font-size="10" text-anchor="end" fill="#b0a894">${t}</text>`);
   s += `<line x1="20" y1="${TANK.top + TANK.h + 7}" x2="1220" y2="${TANK.top + TANK.h + 7}" stroke="#8f897d" stroke-width="2"/>`;
 
@@ -325,7 +325,7 @@ function draw() {
   // ---- 固定の槽
   const T = {};
   const hotT = key => (act(4) && p.dep.some(d => d.to === key)) || (isLoad && phase >= 1 && p.dep.some(d => d.to === key));
-  const evalKey = M.evalSign < 0 ? "outM" : "outP";
+  const evalKey = (M.evalCount === 0 && M.drained === 0 ? M.outM > M.outP : M.evalSign < 0) ? "outM" : "outP";   // 水の入っている桶
   [["aP", "a の＋槽"], ["aM", "a の−槽"], ["bP", "b の＋槽"], ["bM", "b の−槽"], ["outP", "正の答えの桶"], ["outM", "負の答えの桶"], ["pcP", "PCR の＋槽"], ["pcM", "PCR の−槽"]]
     .forEach(([k, n]) => {
       const shown = (k === "outP" || k === "outM") && k === evalKey ? Math.max(0, M[k] - M.drained) : undefined;
@@ -382,11 +382,16 @@ function draw() {
 
   // ---- 評価：カウント係が答えの桶の栓を開け、1u ごとに傾く添水を数える
   const evOn = isEval && phase >= 1, tap = [TX[evalKey] + TANK.w / 2, TANK.top + TANK.h - 10];
-  s += flow(tap[0], tap[1], EV.sozu[0] - 30, EV.sozu[1] - 6, evOn, evOn ? "1u" : "");
+  // 最下段の区切り（槽の段と評価の段を分ける）
+  s += `<rect x="560" y="${EV.top}" width="620" height="130" rx="10" fill="#f6f0fa" stroke="#d9c8e6" stroke-dasharray="4 4"/>
+        <text x="572" y="${EV.top + 18}" font-size="12" font-weight="bold" fill="${HUM}">評価（停止後）</text>
+        <text x="790" y="${EV.top + 60}" font-size="10" fill="#6a5e4c">答えの桶の栓を開け、</text><text x="790" y="${EV.top + 74}" font-size="10" fill="#6a5e4c">1u ごとに傾く回数を数える。</text><text x="790" y="${EV.top + 88}" font-size="10" fill="#6a5e4c">どちらの桶から流れたかで正負を読む</text>`;
+  // 答えの桶の栓 → 槽の脇を下って、最下段の計数添水へ
+  s += pipe([[tap[0], tap[1]], [tap[0] + 14, tap[1]], [tap[0] + 14, EV.top + 40], [EV.sozu[0] - 30, EV.top + 40], [EV.sozu[0] - 30, EV.sozu[1] - 8]], evOn, evOn ? "1u" : "");
   s += sozu(EV.sozu[0], EV.sozu[1], 60, evOn, M.halted() ? 0.7 : 0, "計数添水（評価用）", "");
   const sayCnt = M.finished() ? `${M.evalSign < 0 ? "負" : "正"}の桶 ${M.evalCount}回 → ${M.counted()}` :
     isEval ? `${M.evalSign < 0 || (M.evalCount === 0 && M.outM > M.outP) ? "負" : "正"}の桶：${M.evalCount + (phase >= 1 ? 1 : 0)} 回` : M.halted() ? "栓を開ける" : "";
-  s += person(EV.person[0], EV.person[1] - 40, "カウント係", isEval || M.finished(), sayCnt, "up");
+  s += person(EV.person[0], EV.person[1] - 40, "カウント係", isEval || M.finished(), sayCnt, "right");
 
   $("map").innerHTML = s;
   drawSide(p);
