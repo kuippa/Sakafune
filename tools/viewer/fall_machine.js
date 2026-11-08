@@ -83,7 +83,10 @@
 
   class FallMachine {
     // sd：升の精度（1u あたりの標準偏差）。bias：天秤ごとの皿の狂い（±bias の一様乱数）
-    constructor(key, a, b, { sd = 0, bias = 0 } = {}) {
+    // pcCap：手番レジスタ（PCR）の−升の容量（u）。あふれた水は、同じ竿の＋側に吊った「あふれ受け」へ落ちる。
+    //   −升が満ちると「戻る」水がすべて＋側に掛かるので、手番は進むだけになり、やがてデコーダの端の
+    //   「異常停止」の出口（駅の数 n 以上）に達して止まる。あふれが一度でも起きたら答えは無効（あふれ印）。
+    constructor(key, a, b, { sd = 0, bias = 0, pcCap = 400 } = {}) {
       const P = PROGRAMS[key];
       this.key = key; this.P = P; this.a = a; this.b = b; this.sd = sd;
       const init = P.init(a, b);
@@ -91,6 +94,7 @@
       this.bias = init.map(() => (Math.random() * 2 - 1) * bias);
       this.pcN = 0; this.pcS = 0; this.pcBias = (Math.random() * 2 - 1) * bias;
       this.pulse = Math.max(...P.prog.map(need)) + 1;
+      this.pcCap = pcCap; this.overflow = 0; this.fault = false;
       this.ticks = 0; this.used = 0; this.waste = 0; this.lost = false; this.last = null;
     }
     q(u) { return this.sd ? u * (1 + gauss() * this.sd) : u; }
@@ -99,11 +103,12 @@
     pcRaw() { return this.pcN - this.pcS + this.pcBias; }
     pc() { return Math.round(this.pcRaw()); }               // 目盛り：受け口の幅は ±0.5
     nonzero(r) { return this.N[r] - this.S[r] + this.bias[r] - 0.5 > 0; }   // 南の皿におもり 0.5u
-    halted() { const k = this.pc(); return this.lost || (this.P.prog[k] && this.P.prog[k].op === "HALT"); }
+    halted() { const k = this.pc(); return this.lost || this.fault || (this.P.prog[k] && this.P.prog[k].op === "HALT"); }
 
     // 次の1拍で何が起きるか（状態は変えない）
     plan() {
       const k = this.pc(), ins = this.P.prog[k];
+      if (k >= this.P.prog.length) return { k, op: "FAULT" };   // デコーダの端：異常停止の出口
       if (!ins) return { k, op: "LOST" };
       if (ins.op === "HALT") return { k, op: "HALT" };
       const dep = [];
@@ -128,16 +133,29 @@
       for (const d of p.dep) {
         const v = this.q(d.amt); put += d.amt;
         if (d.to === "reg") { if (d.pan === "N") this.N[d.r] += v; else this.S[d.r] += v; }
-        else if (d.pan === "N") this.pcN += v; else this.pcS += v;
+        else if (d.pan === "N") this.pcN += v;
+        else {                                         // PCR の−升。容量を超えた分は＋側のあふれ受けへ
+          const over = Math.max(0, this.pcS + v - this.pcCap);
+          this.pcS += v - over; this.pcN += over; this.overflow += over;
+        }
       }
       this.waste += this.pulse - put;
       this.ticks++;
-      if (!this.P.prog[this.pc()]) this.lost = true;   // 目盛りの外へ外れた（誤差で手番を見失った）
+      const k = this.pc();
+      if (k >= this.P.prog.length) this.fault = true;        // 異常停止の出口へ
+      else if (k < 0) this.lost = true;                      // 目盛りの外（誤差で手番を見失った）
       return true;
     }
     run(max = 5000) { while (!this.halted() && this.ticks < max) this.tick(); return this.halted() && !this.lost; }
     result() { return this.P.result(this.values()); }
-    correct() { return !this.lost && this.halted() && this.result().ok(this.a, this.b); }
+    correct() { return !this.lost && !this.fault && !this.overflow && this.halted() && this.result().ok(this.a, this.b); }
+    // 止まり方：normal（停止の駅）／overflow（停止の駅に着いたが、あふれ印あり＝答えは無効）／fault（異常停止）／lost／running
+    status() {
+      if (this.lost) return "lost";
+      if (this.fault) return "fault";
+      if (this.halted()) return this.overflow ? "overflow" : "normal";
+      return "running";
+    }
     // 皿に溜まった水の最大（皿の大きさの目安）
     maxPan() { return Math.max(...this.N, ...this.S, this.pcN, this.pcS); }
   }
