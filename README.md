@@ -19,6 +19,7 @@
 | ファイル | 内容 |
 |---|---|
 | [HANDOFF.md](HANDOFF.md) | 最新の引き継ぎ（プロジェクトの現在地） |
+| [VERSIONS.md](VERSIONS.md) | バージョンと継代（試行錯誤の系譜。失敗した設計も含む）。**現在：📦 v1.0 フォールモデル、v2 開発中** |
 | [design/parts_catalog.md](design/parts_catalog.md) | 部品カタログ（部品を機能で定義。設計10 以降で使う） |
 | [handoff/](handoff/) | 引き継ぎの過去の版（節目ごとのスナップショット） |
 | [references/](references/README.md) | 分野別の文献リスト |

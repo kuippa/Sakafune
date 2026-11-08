@@ -3,6 +3,7 @@
 - 作成：Claude Opus 5.5（`claude-opus-5-5`）、2026-11-08
 - 方針：kuippa。最初に水を置いたら、あとは位置エネルギーだけで、水は上から下へだけ流れる。酒船石とは切り離した、別のモデルとして作る（設計09は、石に合わせるために水を上へ運ぶ必要が出ていた）
 - 状態：💭 設計スケッチ。論理はシミュレーションで照合済み
+- バージョン：**📦 v1.0**（2026-11-08。凍結。次の版は v2。系譜は [VERSIONS.md](../VERSIONS.md)）
 - 部品：[parts_catalog.md](parts_catalog.md) の機能部品（SRC・CLK・SPL・DLY・ACC・CMP・RTE、組み合わせの REG・PCR・DCD・駅）で書く
 - 計算の中身：[tools/viewer/fall_machine.js](../tools/viewer/fall_machine.js)、テスト：`node tools/viewer/test_fall.js`、画面：`node tools/viewer/serve.js` → http://localhost:8765/fall.html
 
