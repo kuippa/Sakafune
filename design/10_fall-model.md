@@ -26,11 +26,12 @@
 | ⑤ | **RTE** 振り分け器（JZ の駅だけ） | レジスタ r の軸口の状態（0 / ≠0）で出口を選ぶ |
 | ⑥ | **DLY** 遅延升 | ゆっくり落とす。拍の水が振り分け器を通り終わってから、蓄積升の水が増えるようにする 💭 |
 | ⑦ いちばん下 | **ACC** 蓄積升（REG・PCR の＋升・−升） | 水が溜まるだけ。比較器（CMP）がその重さを比べ、状態を軸口で上の振り分け器へ伝える |
+| ⑦ いちばん下 | **OUT** 出力桶（答え・商・負の分） | ただの桶。「0 か」の判定で読まれないので、比較器は要らない。水位で答えを読む |
 
 ## 3. 命令（駅）
 
 Minsky のカウンタ機械と同じ3つ。
-- **STN-INC r → next**：1u を r の INC口（＋升）へ。\|next − k\| u を PCR の＋升（進む）か−升（戻る）へ
+- **STN-INC r → next**：1u を r の INC口（＋升。r が出力桶ならその桶）へ。\|next − k\| u を PCR の＋升（進む）か−升（戻る）へ
 - **STN-JZ r → z / nz**：r が 0 なら \|z − k\| u を PCR へ。0 でなければ 1u を r の DEC口（−升）へ、\|nz − k\| u を PCR へ
 - **STN-HALT**：入った水は捨て槽へ。PCR は変わらないので、自然に止まる
 
@@ -107,6 +108,7 @@ flowchart TB
       RM(("ACC −升<br/>DEC口"))
       RC{"CMP 2状態<br/>0 / ≠0"}
     end
+    OUT[("OUT 出力桶<br/>答え・商")]
     subgraph PCR["PCR 手番レジスタ"]
       PP(("ACC ＋升"))
       PM(("ACC −升"))
@@ -124,6 +126,7 @@ flowchart TB
   ZRTE -->|"≠0"| DN
   ZRTE -->|"0"| DZ
   DI -->|"1u"| RP
+  DI -->|"1u（答え）"| OUT
   DI -->|"next − k"| PP
   DN -->|"1u"| RM
   DN -->|"nz − k"| PP
@@ -142,10 +145,10 @@ flowchart TB
   classDef acc fill:#fffdf7,stroke:#7a4a26,color:#3a3226
   class SRC,CLK,SPL,DI,DN,DZ,SNK water
   class DRTE,ZRTE,RC,PC wood
-  class RP,RM,PP,PM acc
-  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12 stroke:#2f7fc8,stroke-width:2px
-  linkStyle 13,14 stroke:#7a4a26,stroke-dasharray:4 4
-  linkStyle 15,16,17,18 stroke:#9b958a,stroke-width:1px
+  class RP,RM,PP,PM,OUT acc
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13 stroke:#2f7fc8,stroke-width:2px
+  linkStyle 14,15 stroke:#7a4a26,stroke-dasharray:4 4
+  linkStyle 16,17,18,19 stroke:#9b958a,stroke-width:1px
 ```
 
 - ⑦ の灰色の細い線は「蓄積升を比較器の竿に吊るしている」（重さが比較器にかかる）ことを表す。
@@ -164,10 +167,10 @@ flowchart LR
   S4(["駅4 STN-HALT"])
 
   S0 -->|"≠0：a の−升に 1u<br/>PCR の＋升に 1u"| S1
-  S1 -->|"答えの＋升に 1u<br/>PCR の−升に 1u"| S0
+  S1 -->|"答えの桶に 1u<br/>PCR の−升に 1u"| S0
   S0 -->|"0：PCR の＋升に 2u"| S2
   S2 -->|"≠0：b の−升に 1u<br/>PCR の＋升に 1u"| S3
-  S3 -->|"答えの＋升に 1u<br/>PCR の−升に 1u"| S2
+  S3 -->|"答えの桶に 1u<br/>PCR の−升に 1u"| S2
   S2 -->|"0：PCR の＋升に 2u"| S4
 ```
 
@@ -179,7 +182,8 @@ flowchart LR
 | CLK 拍発生器 | 1 | P ＝ 3u | |
 | DCD デコーダ | 1 | 5方向 | PCR の軸口につなぐ |
 | PCR 手番レジスタ | 1 | 目盛り 0〜4 | 最初は 0（空） |
-| REG レジスタ | 3 | a、b、答え | a・b の＋升に入力の水を入れておく |
+| REG レジスタ | 2 | a、b | ＋升に入力の水を入れておく |
+| OUT 出力桶 | 1 | 答え | ただの桶。水位で答えを読む |
 | 駅 STN-JZ | 2 | 駅0（a）、駅2（b） | RTE ×1、SPL ×2（≠0：1u＋1u、0：2u） |
 | 駅 STN-INC | 2 | 駅1、駅3 | SPL（1u＋1u） |
 | 駅 STN-HALT | 1 | 駅4 | |

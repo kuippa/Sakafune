@@ -192,6 +192,19 @@ function draw() {
   s += `<path d="M${G.pc},${Y.beam} C${G.pc - 90},${Y.beam - 200} 150,${Y.dec + 120} 230,${Y.dec + 6}" fill="none" stroke="#7a4a26" stroke-width="2" stroke-dasharray="2 4"/>
         <text x="70" y="${Y.st + 90}" font-size="10" fill="#7a4a26">軸口：手番レジスタの値</text><text x="70" y="${Y.st + 104}" font-size="10" fill="#7a4a26">→ DCD の振り分け器</text>`;
   M.P.regs.forEach((name, r) => {
+    if (M.out[r]) {   // OUT 出力桶：JZ で読まれないので、比較器は要らない。ただの桶
+      const cx = G.rcx[r], top = Y.pan - 10, w = 64, h = 90;
+      const maxW = Math.max(6, ...M.N, ...M.S, M.pcN, M.pcS), lv = Math.min(1, M.N[r] / maxW) * (h - 4);
+      const hotOut = hot(4) && p.dep && p.dep.some(d => d.to === "reg" && d.r === r);
+      s += `<text x="${cx}" y="${Y.beam - 12}" font-size="13" text-anchor="middle" font-weight="bold">${name}</text>
+            <text x="${cx}" y="${Y.beam + 4}" font-size="10" text-anchor="middle" fill="#6a5e4c">OUT 出力桶</text>
+            <rect x="${cx - w / 2 + 3}" y="${top + h - 2 - lv}" width="${w - 6}" height="${lv}" fill="#3d8fd6" opacity=".8"/>
+            <path d="M${cx - w / 2},${top} L${cx - w / 2 + 4},${top + h} L${cx + w / 2 - 4},${top + h} L${cx + w / 2},${top}" fill="none" stroke="${hotOut ? "#2f7fc8" : "#7a4a26"}" stroke-width="${hotOut ? 4 : 2.5}"/>
+            <text x="${cx}" y="${top + h + 14}" font-size="10" text-anchor="middle" fill="#3a3226">${M.N[r].toFixed(1)}u</text>
+            <text x="${cx}" y="${Y.pan + 118}" font-size="22" text-anchor="middle" font-weight="bold" fill="#2f7fc8">${M.value(r)}</text>`;
+      G.pans[r] = { N: [cx, top] };
+      return;
+    }
     const cx = G.rcx[r], t = M.N[r] - M.S[r];
     const b = balance(cx, Y.beam, 48, M.N[r], M.S[r], t > 0.25 ? 1 : t < -0.25 ? -1 : 0,
       hot(4) && p.dep && p.dep.some(d => d.to === "reg" && d.r === r && d.pan === "N"), hot(4) && p.dep && p.dep.some(d => d.to === "reg" && d.r === r && d.pan === "S"), name, `${M.value(r)}`);
@@ -226,7 +239,9 @@ function caption(p) {
   if (p.op === "HALT") return `<b>停止</b>：PC が停止の駅を指している。拍発生器が落とす水は、もう捨て槽へ流れるだけ。答え ＝ <b>${M.result().text}</b>`;
   if (phase === 0) return `次の拍は<b>駅${p.k}</b>（PC ＝ ${M.pc()}）。「1拍」で、水の流れを4段階で見られます。`;
   const pcs = p.dep.filter(d => d.to === "pc").map(d => `手番レジスタの${d.pan === "N" ? "＋升" : "−升"}へ ${d.amt}u（駅${p.next} へ）`);
-  const regs = p.dep.filter(d => d.to === "reg").map(d => `レジスタ「${regName(d.r)}」の${d.pan === "N" ? "＋升（INC口）" : "−升（DEC口）"}へ 1u（${regName(d.r)} が 1 ${d.pan === "N" ? "増える" : "減る"}）`);
+  const regs = p.dep.filter(d => d.to === "reg").map(d => M.out[d.r]
+    ? `出力桶「${regName(d.r)}」へ 1u（${regName(d.r)} が 1 増える）`
+    : `レジスタ「${regName(d.r)}」の${d.pan === "N" ? "＋升（INC口）" : "−升（DEC口）"}へ 1u（${regName(d.r)} が 1 ${d.pan === "N" ? "増える" : "減る"}）`);
   return [null,
     `<b>① 拍（CLK）</b>：電源槽（SRC）から一定の速さで流れ込む水で拍発生器が満ち、${M.pulse}u をまとめて落とす。ここから下は、水が上から下へ流れるだけ。`,
     `<b>② デコーダ（DCD）</b>：いちばん下の手番レジスタ（PCR）の値が、軸口で上の振り分け器に伝わる。値 ＝ ${M.pc()} なので、振り分け器は<b>出口 ${p.k}</b>へ水を流し、水は駅${p.k} へ行く。`,

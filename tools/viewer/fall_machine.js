@@ -91,6 +91,8 @@
       this.key = key; this.P = P; this.a = a; this.b = b; this.sd = sd;
       const init = P.init(a, b);
       this.N = init.slice(); this.S = init.map(() => 0);
+      // OUT 出力桶：JZ で読まれないレジスタは、比較器も−升も要らない。ただの桶（値 ＝ 中の水の量）
+      this.out = init.map((_, r) => !P.prog.some(ins => ins.op === "JZ" && ins.r === r));
       this.bias = init.map(() => (Math.random() * 2 - 1) * bias);
       this.pcN = 0; this.pcS = 0; this.pcBias = (Math.random() * 2 - 1) * bias;
       this.pulse = Math.max(...P.prog.map(need)) + 1;
