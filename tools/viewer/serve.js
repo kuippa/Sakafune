@@ -20,6 +20,7 @@ http.createServer((req, res) => {
   if (p.startsWith("/repo/") && !p.endsWith(".md")) { res.writeHead(403); return res.end(); }
   const [base, rel] = p.startsWith("/design/") ? [DESIGN, p.slice("/design".length)]
     : p.startsWith("/repo/") ? [REPO, p.slice("/repo".length)]
+    : /^\/[^/]+\.md$/.test(p) ? [REPO, p]          // /VERSIONS.md など、リポジトリ直下の文書（diagram.html の相対パス用）
     : p.startsWith("/v2/") ? [V2, p.slice("/v2".length)] : [ROOT, p];
   const file = path.join(base, path.normalize(rel));
   if (!file.startsWith(base)) { res.writeHead(403); return res.end(); }
