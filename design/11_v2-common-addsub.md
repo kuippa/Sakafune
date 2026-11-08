@@ -5,6 +5,7 @@
 - 状態：💭 草案（v2 開発中）。論理はシミュレーションで照合済み
 - 親：[v1.0](../VERSIONS.md)（設計10 フォールモデル）
 - 計算の中身：[tools/v2/addsub_machine.js](../tools/v2/addsub_machine.js)、テスト：`node tools/v2/test_addsub.js`
+- 画面：`node tools/viewer/serve.js` → http://localhost:8765/v2/fall_v2.html（固定の槽、浮き比較器、切り替え器 SW。1拍を4段階で見る）
 
 ---
 
