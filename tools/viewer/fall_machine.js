@@ -1,0 +1,146 @@
+// フォールモデル（design/10）：最初に水を置いたら、あとは位置エネルギーだけで、水が上から下へ流れて計算する機械。
+// 酒船石とは切り離した、別のモデル。ブラウザ（<script src>）と Node（require）の両方で使う。外部パッケージなし。
+// 作成：Claude Opus 5.5（2026-11-08）。
+//
+// 高さの順（上から下へしか流れない）：
+//   漏刻（一定の高さの水槽）→ 添水（満ちるたびに傾いて、電源の水をまとめて落とす＝クロック）
+//   → PC の指し樋（手番の天秤と同じ軸。傾きの量で駅0・駅1…の受け口を選ぶ）
+//   → 駅の升（すり切りで量り分け）→［JZ のときだけ］レジスタの天秤の指し樋（0 か）
+//   → 遅れ升（小さな穴でゆっくり落とす）→ いちばん下の皿（レジスタと PC）
+// 状態はすべて「皿に足すだけの水」：値 ＝ 北の皿 − 南の皿。上へ運ぶものは何もない。
+// 命令：INC r → next ／ JZ r（0 なら z、そうでなければ r を 1 減らして nz）／ HALT。Minsky のカウンタ機械と同じ。
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) module.exports = factory();
+  else root.Fall = factory();
+})(this, function () {
+  "use strict";
+
+  const PROGRAMS = {
+    add: {
+      label: "足し算", symbol: "+", regs: ["a", "b", "答え"], init: (a, b) => [a, b, 0],
+      prog: [
+        { op: "JZ", r: 0, z: 2, nz: 1, note: "a が 0 でなければ 1 減らす" },
+        { op: "INC", r: 2, next: 0, note: "答えに 1 足す" },
+        { op: "JZ", r: 1, z: 4, nz: 3, note: "b が 0 でなければ 1 減らす" },
+        { op: "INC", r: 2, next: 2, note: "答えに 1 足す" },
+        { op: "HALT" },
+      ],
+      result: v => ({ text: `${v[2]}`, ok: (a, b) => v[2] === a + b }),
+    },
+    sub: {
+      label: "引き算", symbol: "−", regs: ["a", "b", "負の分"], init: (a, b) => [a, b, 0],
+      prog: [
+        { op: "JZ", r: 1, z: 3, nz: 1, note: "b が 0 になるまで 1 ずつ" },
+        { op: "JZ", r: 0, z: 2, nz: 0, note: "a から 1 引く" },
+        { op: "INC", r: 2, next: 0, note: "a が足りなければ、負の分に数える" },
+        { op: "HALT" },
+      ],
+      result: v => { const x = v[2] > 0 ? -v[2] : v[0]; return { text: `${x}`, ok: (a, b) => x === a - b }; },
+    },
+    mul: {
+      label: "掛け算", symbol: "×", regs: ["a", "b", "答え", "作業"], init: (a, b) => [a, b, 0, 0],
+      prog: [
+        { op: "JZ", r: 0, z: 6, nz: 1, note: "a 回くり返す" },
+        { op: "JZ", r: 1, z: 4, nz: 2, note: "b を 1 つ取り出す" },
+        { op: "INC", r: 2, next: 3, note: "答えに 1" },
+        { op: "INC", r: 3, next: 1, note: "作業に 1（b の写し）" },
+        { op: "JZ", r: 3, z: 0, nz: 5, note: "作業を b へ戻す" },
+        { op: "INC", r: 1, next: 4, note: "b に 1" },
+        { op: "HALT" },
+      ],
+      result: v => ({ text: `${v[2]}`, ok: (a, b) => v[2] === a * b }),
+    },
+    div: {
+      label: "割り算", symbol: "÷", regs: ["a", "b", "商", "作業", "余り"], init: (a, b) => [a, b, 0, 0, 0],
+      prog: [
+        { op: "JZ", r: 1, z: 2, nz: 1, note: "b を作業へ移す" },
+        { op: "INC", r: 3, next: 0, note: "作業に 1" },
+        { op: "JZ", r: 3, z: 6, nz: 3, note: "b の数だけくり返す" },
+        { op: "INC", r: 1, next: 4, note: "b に 1 戻す" },
+        { op: "JZ", r: 0, z: 8, nz: 5, note: "a から 1 引く。尽きたら終わり" },
+        { op: "INC", r: 4, next: 2, note: "引いた分を余りへ" },
+        { op: "INC", r: 2, next: 7, note: "b だけ引けたので商に 1" },
+        { op: "JZ", r: 4, z: 0, nz: 7, note: "余りの皿を 0 に戻す" },
+        { op: "HALT" },
+      ],
+      result: v => ({ text: `${v[2]} 余り ${v[4]}`, ok: (a, b) => b > 0 && v[2] === Math.floor(a / b) && v[4] === a % b }),
+    },
+  };
+
+  function gauss() {
+    let u = 0, w = 0;
+    while (u === 0) u = Math.random();
+    while (w === 0) w = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * w);
+  }
+
+  // 駅ごとに要る電源の水（u）。添水が一度に落とす量は、これより少し多くしておく（余りは溢れて捨て溝へ）
+  function need(ins, k) {
+    if (ins.op === "HALT") return 0;
+    if (ins.op === "INC") return 1 + Math.abs(ins.next - k);
+    return Math.max(1 + Math.abs(ins.nz - k), Math.abs(ins.z - k));
+  }
+
+  class FallMachine {
+    // sd：升の精度（1u あたりの標準偏差）。bias：天秤ごとの皿の狂い（±bias の一様乱数）
+    constructor(key, a, b, { sd = 0, bias = 0 } = {}) {
+      const P = PROGRAMS[key];
+      this.key = key; this.P = P; this.a = a; this.b = b; this.sd = sd;
+      const init = P.init(a, b);
+      this.N = init.slice(); this.S = init.map(() => 0);
+      this.bias = init.map(() => (Math.random() * 2 - 1) * bias);
+      this.pcN = 0; this.pcS = 0; this.pcBias = (Math.random() * 2 - 1) * bias;
+      this.pulse = Math.max(...P.prog.map(need)) + 1;
+      this.ticks = 0; this.used = 0; this.waste = 0; this.lost = false; this.last = null;
+    }
+    q(u) { return this.sd ? u * (1 + gauss() * this.sd) : u; }
+    value(r) { return Math.round(this.N[r] - this.S[r]); }
+    values() { return this.N.map((_, r) => this.value(r)); }
+    pcRaw() { return this.pcN - this.pcS + this.pcBias; }
+    pc() { return Math.round(this.pcRaw()); }               // 目盛り：受け口の幅は ±0.5
+    nonzero(r) { return this.N[r] - this.S[r] + this.bias[r] - 0.5 > 0; }   // 南の皿におもり 0.5u
+    halted() { const k = this.pc(); return this.lost || (this.P.prog[k] && this.P.prog[k].op === "HALT"); }
+
+    // 次の1拍で何が起きるか（状態は変えない）
+    plan() {
+      const k = this.pc(), ins = this.P.prog[k];
+      if (!ins) return { k, op: "LOST" };
+      if (ins.op === "HALT") return { k, op: "HALT" };
+      const dep = [];
+      const movePC = next => { const d = next - k; if (d) dep.push({ to: "pc", pan: d > 0 ? "N" : "S", amt: Math.abs(d) }); };
+      if (ins.op === "INC") {
+        dep.push({ to: "reg", r: ins.r, pan: "N", amt: 1 });
+        movePC(ins.next);
+        return { k, op: "INC", r: ins.r, next: ins.next, dep };
+      }
+      const nz = this.nonzero(ins.r);
+      if (nz) dep.push({ to: "reg", r: ins.r, pan: "S", amt: 1 });
+      movePC(nz ? ins.nz : ins.z);
+      return { k, op: "JZ", r: ins.r, branch: nz ? "nz" : "z", next: nz ? ins.nz : ins.z, dep };
+    }
+
+    tick() {
+      if (this.halted()) return false;
+      const p = this.plan();
+      this.last = p;
+      this.used += this.pulse;
+      let put = 0;
+      for (const d of p.dep) {
+        const v = this.q(d.amt); put += d.amt;
+        if (d.to === "reg") { if (d.pan === "N") this.N[d.r] += v; else this.S[d.r] += v; }
+        else if (d.pan === "N") this.pcN += v; else this.pcS += v;
+      }
+      this.waste += this.pulse - put;
+      this.ticks++;
+      if (!this.P.prog[this.pc()]) this.lost = true;   // 目盛りの外へ外れた（誤差で手番を見失った）
+      return true;
+    }
+    run(max = 5000) { while (!this.halted() && this.ticks < max) this.tick(); return this.halted() && !this.lost; }
+    result() { return this.P.result(this.values()); }
+    correct() { return !this.lost && this.halted() && this.result().ok(this.a, this.b); }
+    // 皿に溜まった水の最大（皿の大きさの目安）
+    maxPan() { return Math.max(...this.N, ...this.S, this.pcN, this.pcS); }
+  }
+
+  return { PROGRAMS, FallMachine, need };
+});
