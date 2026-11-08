@@ -13,13 +13,13 @@ for (const key of Object.keys(PROGRAMS)) {
     if (m.correct()) ok++; else { fail++; if (fail < 10) console.log(`  NG ${key} a=${a} b=${b} → ${m.result().text}`); }
     maxTicks = Math.max(maxTicks, m.ticks); maxWater = Math.max(maxWater, m.used); maxPan = Math.max(maxPan, m.maxPan()); pulse = m.pulse;
   }
-  console.log(`  ${PROGRAMS[key].label}：${ok}/${tot} 正しい（駅 ${PROGRAMS[key].prog.length}、1拍 ${pulse}u、最大 ${maxTicks} 拍、水槽から最大 ${maxWater}u、皿の最大 ${Math.round(maxPan)}u）`);
+  console.log(`  ${PROGRAMS[key].label}：${ok}/${tot} 正しい（駅 ${PROGRAMS[key].prog.length}、1拍 ${pulse}u、最大 ${maxTicks} 拍、電源槽から最大 ${maxWater}u、蓄積升の最大 ${Math.round(maxPan)}u）`);
 }
 
 console.log("\n== 割り算 b = 0：止まらないこと（5000 拍で打ち切り）");
 { const m = new FallMachine("div", 5, 0); console.log(`  5 ÷ 0 → ${m.run() ? "止まった（おかしい）" : "止まらない（期待どおり）"}`); }
 
-console.log("\n== 升の精度（各 200 回、a = 7, b = 3）。数字は答えが合っていた割合");
+console.log("\n== 定量升・量り分け器の精度（各 200 回、a = 7, b = 3）。数字は答えが合っていた割合");
 for (const key of Object.keys(PROGRAMS)) {
   const row = [];
   for (const sd of [0.005, 0.01, 0.03, 0.05]) {
