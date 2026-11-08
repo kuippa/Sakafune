@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模式図ビューア</title>
+<!--
+  design/ の Markdown 文書から ```mermaid の図だけを取り出して描く（GitHub での見え方の確認用）。
+  使い方: http://localhost:8765/diagram.html?doc=10_fall-model.md
+  作成：Claude Opus 5.5（2026-11-08）。Mermaid は jsDelivr から読み込む。
+-->
+<style>
+  body { margin:0; padding:16px; background:#f7f2e7; color:#3a3226; font-family:'Yu Gothic','Meiryo','Hiragino Sans',sans-serif; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  h2 { font-size:16px; margin:24px 0 6px; }
+  .note { color:#6a5e4c; font-size:13px; margin:0 0 6px; }
+  .fig { background:#fffdf7; border:1px solid #c9bfa8; border-radius:8px; padding:12px; overflow-x:auto; }
+  .err { color:#c0392b; white-space:pre-wrap; font-size:13px; }
+</style>
+</head>
+<body>
+<h1 id="title">模式図</h1>
+<p class="note" id="src"></p>
+<div id="out"></div>
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs";
+mermaid.initialize({ startOnLoad: false, theme: "base", securityLevel: "strict",
+  themeVariables: { fontFamily: "'Yu Gothic','Meiryo',sans-serif", primaryColor: "#fffdf7", lineColor: "#6a5e4c" } });
+const doc = new URLSearchParams(location.search).get("doc") || "10_fall-model.md";
+const out = document.getElementById("out");
+document.getElementById("src").textContent = `design/${doc} の Mermaid の図を描いています（GitHub でも同じ図になります）`;
+const md = (await (await fetch(`/design/${doc}`)).text()).replace(/\r\n/g, "\n");
+const title = (md.match(/^# (.+)$/m) || [])[1];
+if (title) document.getElementById("title").textContent = title;
+// 見出しと Mermaid のブロックを順に拾う
+const re = /^(#{2,4}) (.+)$|```mermaid\n([\s\S]*?)```/gm;
+let m, n = 0, lastHead = "";
+while ((m = re.exec(md))) {
+  if (m[2]) { lastHead = m[2]; continue; }
+  const h = document.createElement("h2"); h.textContent = lastHead; out.appendChild(h);
+  const box = document.createElement("div"); box.className = "fig"; out.appendChild(box);
+  try {
+    const { svg } = await mermaid.render(`fig${n++}`, m[3]);
+    box.innerHTML = svg;
+  } catch (e) {
+    box.innerHTML = `<div class="err">図の書き方に誤り：${String(e.message || e)}</div>`;
+  }
+}
+if (!n) out.textContent = "この文書には Mermaid の図がありません。";
+window.__diagramsDone = n;
+</script>
+</body>
+</html>

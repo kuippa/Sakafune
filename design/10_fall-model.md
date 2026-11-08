@@ -60,3 +60,85 @@ a, b = 0〜9 の全組み合わせで正しい（割り算は b = 1〜9。b = 0 
 - 目盛りを読む天秤（PC）は、駅の数だけ受け口を見分ける必要がある（割り算で9つ）。受け口の位置は、組み立てた後に PC に 0, 1, 2… の水を入れて印をつける（校正）想定。
 - 遅れ升の遅れが、電源の水が通る時間より長く、拍の間隔より短いこと。
 - 添水が落とす量は毎回少しずつ違ってよい（駅の升がすり切りで量り直す）。足りないことだけは避ける。
+
+## 6. 模式図（Mermaid）
+
+### 6.1 装置の全体（どのプログラムでも同じ）
+
+上から下へ、高さの順に並べている。**青い実線は水の流れ**で、必ず上から下へ向かう。**茶色の点線は「同じ軸」**（天秤の竿の傾きを、上にある指し樋へ伝える木の軸）で、水は流れない。
+
+```mermaid
+flowchart TB
+  subgraph T1["① いちばん高い：電源とクロック"]
+    TANK[("漏刻<br/>一定の高さの水槽")]
+    SOZU{{"添水<br/>満ちると傾く＝1拍"}}
+  end
+  subgraph T2["② 手番の読み取り"]
+    DEC[/"手番の指し樋<br/>傾きの量で受け口を選ぶ"\]
+  end
+  subgraph T3["③ 駅（すり切りの升で量り分け）"]
+    ST["駅 k の升"]
+  end
+  subgraph T4["④ 0 の判定（JZ の駅だけ）"]
+    ZP[/"レジスタ r の指し樋"\]
+  end
+  subgraph T5["⑤ 遅れ升（小さな穴でゆっくり落とす）"]
+    DI[["遅れ升：INC"]]
+    DN[["遅れ升：≠0"]]
+    DZ[["遅れ升：0"]]
+  end
+  subgraph T6["⑥ いちばん低い：皿（状態。水は足すだけ）"]
+    RN(("r の北の皿<br/>r が 1 増える"))
+    RS(("r の南の皿<br/>r が 1 減る"))
+    PCP(("PC の北・南の皿<br/>次の駅へ"))
+  end
+  W[["捨て溝"]]
+
+  TANK -->|"一定の流れ"| SOZU
+  SOZU -->|"電源の水"| DEC
+  DEC -->|"受け口 k"| ST
+  ST -->|"INC r"| DI
+  ST -->|"JZ r"| ZP
+  ST -->|"溢れた分"| W
+  ZP -->|"r ≠ 0"| DN
+  ZP -->|"r = 0"| DZ
+  DI -->|"1u"| RN
+  DI -->|"next − k"| PCP
+  DN -->|"1u"| RS
+  DN -->|"nz − k"| PCP
+  DZ -->|"z − k"| PCP
+
+  DEC -.-|"同じ軸"| PCP
+  ZP -.-|"同じ軸"| RN
+  ZP -.-|"同じ軸"| RS
+  T1 ~~~ T2 ~~~ T3 ~~~ T4 ~~~ T5 ~~~ T6
+
+  classDef water fill:#e9f2fb,stroke:#2f7fc8,color:#1d3c5a
+  classDef wood fill:#f3e7d8,stroke:#7a4a26,color:#3a3226
+  classDef pan fill:#fffdf7,stroke:#7a4a26,color:#3a3226
+  class TANK,SOZU,ST,DI,DN,DZ,W water
+  class DEC,ZP wood
+  class RN,RS,PCP pan
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12 stroke:#2f7fc8,stroke-width:2px
+  linkStyle 13,14,15 stroke:#7a4a26,stroke-dasharray:4 4
+```
+
+### 6.2 プログラムの流れ（足し算 a + b）
+
+**矢印は手番（PC）の移り変わりで、水の流れではない。** 手番が「戻る」矢印も、水は上へ戻らない（PC の南の皿に水を足して、値を小さくするだけ）。
+
+```mermaid
+flowchart LR
+  S0["駅0<br/>a は 0 か"]
+  S1["駅1<br/>答えに 1 足す"]
+  S2["駅2<br/>b は 0 か"]
+  S3["駅3<br/>答えに 1 足す"]
+  S4(["駅4<br/>停止"])
+
+  S0 -->|"≠0：a の南の皿に 1u<br/>PC の北の皿に 1u"| S1
+  S1 -->|"答えの北の皿に 1u<br/>PC の南の皿に 1u"| S0
+  S0 -->|"0：PC の北の皿に 2u"| S2
+  S2 -->|"≠0：b の南の皿に 1u<br/>PC の北の皿に 1u"| S3
+  S3 -->|"答えの北の皿に 1u<br/>PC の南の皿に 1u"| S2
+  S2 -->|"0：PC の北の皿に 2u"| S4
+```
