@@ -6,12 +6,13 @@
 <title>フォールモデル v2</title>
 <!--
   v2 草案（design/11）：足し算と引き算を、同じ固定した装置で回す。違いは連動した切り替え器（SW1・SW2、レバー1本）だけ。
-  答えは「1つの桶に、答えの量だけ」出る（引き算は a と b を相殺し、残ったほうを答えの桶へ移す）。
+  人の操作と評価も図に入れる：給水係（電源槽へ水を注ぐ）、元栓管理係（計数添水を数えて a・b へ送り、CLK へ切り替える）、
+  カウント係（答えの桶を 1u ずつ添水で数える）。答えは「1つの桶に、答えの量だけ」出る。
   桶はすべて地面に固定し、a・b・手番レジスタは浮き比較器（浮き＋竿）で水位を読む。横から見た図（上が高い）。
   計算の中身は addsub_machine.js（Node のテスト test_addsub.js と共通）。作成：Claude Opus 5.5（2026-11-08）。
 -->
 <style>
-  :root { --bg:#f7f2e7; --ink:#3a3226; --sub:#6a5e4c; --panel:#fffdf7; --edge:#c9bfa8; --lit:#2f7fc8; --bad:#c0392b; --ok:#2e7d32; --sw:#b9770e; }
+  :root { --bg:#f7f2e7; --ink:#3a3226; --sub:#6a5e4c; --panel:#fffdf7; --edge:#c9bfa8; --lit:#2f7fc8; --bad:#c0392b; --ok:#2e7d32; --sw:#b9770e; --hum:#8e44ad; }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); font-family:'Yu Gothic','Meiryo','Hiragino Sans',sans-serif; }
   header { padding:12px 16px 0; }
@@ -33,6 +34,7 @@
   #prog small { color:var(--sub); display:block; }
   #caption { font-size:16px; line-height:1.6; min-height:52px; padding:8px 12px; background:#e9f2fb; border-left:5px solid var(--lit); border-radius:6px; margin-bottom:8px; }
   #caption b { color:var(--lit); }
+  #caption .hum { color:var(--hum); font-weight:bold; }
   #result { font-size:22px; font-weight:bold; color:var(--lit); margin:4px 0; }
   #stat, #log { font-size:13px; line-height:1.6; font-variant-numeric:tabular-nums; }
   #log { max-height:200px; overflow:auto; color:var(--sub); }
@@ -44,8 +46,8 @@
 </head>
 <body>
 <header>
-  <h1>フォールモデル v2 ― 足し算と引き算を同じ装置で</h1>
-  <p class="note">v2 草案（設計11）。入力は <b>INP 入力器</b>（1u の升の列に仕切りを差す）で a・b の槽へ送る。桶はすべて地面に固定し、a・b・手番レジスタは浮きと竿で水位を読む（浮き比較器）。足し算と引き算の違いは、スタート前に倒す<b>切り替えレバー1本</b>（SW1・SW2 が連動）だけ。答えは<b>「正の答え」か「負の答え」の桶の一方だけに、答えの量の水</b>として出る。</p>
+  <h1>フォールモデル v2 ― 足し算と引き算を同じ装置で（人の操作と評価つき）</h1>
+  <p class="note">v2 草案（設計11）。<b style="color:#8e44ad">人の役割</b>：給水係が電源槽へ水を注ぎ、元栓管理係が計数添水（1u ごとに傾く鹿威し）の回数を数えて a・b の槽へ送り、CLK へ切り替える。計算は水が上から下へ流れるだけで進み、止まったらカウント係が答えの桶を 1u ずつ数える。桶はすべて地面に固定し、a・b・手番レジスタは浮きと竿で水位を読む。足し算と引き算の違いは<b>切り替えレバー1本</b>だけ。</p>
 </header>
 <div class="bar">
   <input id="a" type="number" min="0" max="20" value="3" aria-label="a">
@@ -55,25 +57,25 @@
   </span>
   <input id="b" type="number" min="0" max="20" value="4" aria-label="b">
   <button id="set">セット</button>
-  <button id="step">1拍（4段階で見る）</button>
+  <button id="step">1手（段階で見る）</button>
   <button id="run">▶ 実行</button>
   <label><input id="detail" type="checkbox" checked> 段階ごとに見る</label>
   <label>速さ <input id="spd" type="range" min="1" max="40" value="3"><span id="spdv"></span></label>
-  <label>定量升の精度 ± <input id="sd" type="range" min="0" max="0.1" step="0.005" value="0"><span id="sdv"></span></label>
+  <label>升・添水の精度 ± <input id="sd" type="range" min="0" max="0.1" step="0.005" value="0"><span id="sdv"></span></label>
   <button id="all">全部試す</button>
 </div>
 <main>
   <div style="display:flex;flex-direction:column;gap:12px">
-    <div class="box"><h2>プログラム（足し算・引き算で共通）</h2><div id="prog"></div></div>
+    <div class="box"><h2>手順</h2><div id="prog"></div></div>
     <div class="box"><h2>結果</h2><div id="result"></div><div id="stat"></div></div>
     <div class="box"><h2>記録</h2><div id="log"></div></div>
   </div>
   <div class="box">
     <div id="caption"></div>
-    <svg id="map" viewBox="0 0 1240 830" width="100%"></svg>
+    <svg id="map" viewBox="0 0 1240 870" width="100%"></svg>
     <div class="legend">
-      <span>横から見た図（上が高い）</span><span>▬ 灰：固定した槽・升（動かない）</span><span>━ 茶：浮き比較器の竿／━ 緑：振り分け器の樋（軽い可動部）</span>
-      <span>◆ 橙：切り替え器（SW1・SW2 は連動。スタート前に決める）</span><span>┅ 茶の点線：軸口</span><span>━ 青：いまの段階で水が流れる道</span>
+      <span>横から見た図（上が高い）</span><span style="color:#8e44ad">● 紫：人（役割と、いましていること）</span><span>▬ 灰：固定した槽・升</span>
+      <span>━ 茶：浮き比較器の竿／━ 緑：振り分け器・樋・添水（軽い可動部）</span><span>◆ 橙：切り替え器（レバー1本で連動）</span><span>┅ 茶の点線：軸口</span><span>━ 青：いま水が流れる道</span>
     </div>
   </div>
 </main>
@@ -85,21 +87,19 @@ const $ = id => document.getElementById(id);
 let M, logs = [], phase = 0, P = null, busy = false, running = false, runId = 0, animId = 0;
 const mode = () => document.querySelector('input[name="mode"]:checked').value;
 const sym = () => (M.mode === "add" ? "+" : "−");
-const BLUE = "#2f7fc8", GREY = "#a39d92";
+const BLUE = "#2f7fc8", GREY = "#a39d92", HUM = "#8e44ad";
 
 // ---------------- 配置 ----------------
-const TANK = { top: 600, h: 130, w: 62 };
-const TX = { aP: 120, aM: 200, bP: 330, bM: 410, outP: 580, outM: 680, pcP: 960, pcM: 1040 };
+const TANK = { top: 640, h: 120, w: 62 };
+const TX = { aP: 120, aM: 200, bP: 330, bM: 410, outP: 580, outM: 680, pcP: 990, pcM: 1070 };
 const ST = [{ cx: 330, w: 210 }, { cx: 580, w: 200 }, { cx: 800, w: 170 }, { cx: 960, w: 110 }];
-const Y = { src: 28, clk: 110, dcd: 150, bins: 210, st: 250, stH: 70 };
-// 振り分け器（RTE）の位置と、その出口
+const Y = { src: 34, valve: 92, cnt: 118, route: 168, clk: 150, dcd: 196, bins: 250, st: 290, stH: 66 };
+const XC = { src: 170, valve: 236, cnt: 300, route: 380, clk: 600, dcd: 710, snk: 1150 };
 const R = {
-  sw1: [300, 350],                    // 駅0 の入口の SW1
-  a0: [270, 410], b0: [340, 455],     // 駅0：a は 0 か → b は 0 か（2段）
-  r1: [580, 380], sw2: [640, 445],    // 駅1：b は 0 か → SW2
-  r2: [800, 380],                     // 駅2：a は 0 か
+  sw1: [300, 390], a0: [270, 450], b0: [340, 495],
+  r1: [580, 420], sw2: [640, 485], r2: [800, 420],
 };
-// 振り分けの結果ごとの「水が出る点」
+const EV = { sozu: [770, 735], person: [840, 690] };   // カウント係と評価用の添水
 function outlet(p) {
   switch (`${p.k}:${p.kind}`) {
     case "0:bypass": return [R.sw1[0] - 46, R.sw1[1] + 30];
@@ -125,19 +125,41 @@ function cup(x, y, w, h, full, label) {
   return `<path d="M${x - w / 2},${y} L${x - w / 2 + 3},${y + h} L${x + w / 2 - 3},${y + h} L${x + w / 2},${y}" fill="${full ? "#3d8fd6" : "#eceae4"}" stroke="#6f6a60" stroke-width="2"/>` +
     (label ? `<text x="${x}" y="${y + h + 12}" font-size="10" text-anchor="middle" fill="#6a5e4c">${label}</text>` : "");
 }
-function rte(x, y, right, hot, label, lz = "0", lnz = "≠0", litOut) {   // 振り分け器（樋）と2つの受け口
+function rte(x, y, right, hot, label, litOut) {
   return `<circle cx="${x}" cy="${y}" r="4" fill="#2b1a0c"/>
     <line x1="${x}" y1="${y}" x2="${x + (right ? 15 : -15)}" y2="${y + 20}" stroke="${hot ? BLUE : "#6b8f2a"}" stroke-width="6" stroke-linecap="round"/>
     <text x="${x}" y="${y - 9}" font-size="10" text-anchor="middle">${label}</text>` +
-    cup(x - 24, y + 22, 24, 12, litOut === "l", lz) + cup(x + 24, y + 22, 24, 12, litOut === "r", lnz);
+    cup(x - 24, y + 22, 24, 12, litOut === "l", "0") + cup(x + 24, y + 22, 24, 12, litOut === "r", "≠0");
 }
 function sw(x, y, text, sub) {
   return `<polygon points="${x},${y - 18} ${x + 22},${y} ${x},${y + 18} ${x - 22},${y}" fill="#fdf3e1" stroke="#b9770e" stroke-width="3"/>
     <text x="${x}" y="${y + 4}" font-size="11" text-anchor="middle" font-weight="bold" fill="#7a4a08">${text}</text>
     <text x="${x + 26}" y="${y - 4}" font-size="10" fill="#7a4a08">${sub}</text>`;
 }
-function tank(key, label, hot, maxV) {
-  const x = TX[key], vol = M[key], lv = Math.min(1, vol / maxV) * (TANK.h - 6), wy = TANK.top + TANK.h - 3 - lv;
+// 添水（鹿威し）：満ちると傾く
+function sozu(x, y, len, tipped, fill, label, sub) {
+  return `<g transform="rotate(${tipped ? 28 : -14} ${x} ${y})"><rect x="${x - len / 2}" y="${y - 8}" width="${len}" height="16" rx="8" fill="#cfe0a6" stroke="#6b8f2a" stroke-width="2"/>
+    <rect x="${x - len / 2 + 3}" y="${y - 5}" width="${tipped ? 0 : (len / 2 - 4) * fill}" height="10" fill="#3d8fd6" opacity=".8"/></g>
+    <circle cx="${x}" cy="${y}" r="4" fill="#4a2e12"/>
+    <text x="${x}" y="${y + 26}" font-size="11" text-anchor="middle">${label}</text>` +
+    (sub ? `<text x="${x}" y="${y + 39}" font-size="10" text-anchor="middle" fill="#6a5e4c">${sub}</text>` : "");
+}
+// 人：役割と、いましていること（吹き出し）
+function person(x, y, role, active, say, pos = "right") {
+  const c = active ? HUM : "#b9a3c6";
+  let s = `<circle cx="${x}" cy="${y}" r="9" fill="none" stroke="${c}" stroke-width="2.5"/>
+    <path d="M${x},${y + 9} L${x},${y + 30} M${x - 12},${y + 17} L${x + 12},${y + 17} M${x},${y + 30} L${x - 9},${y + 45} M${x},${y + 30} L${x + 9},${y + 45}" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="${x}" y="${y + 60}" font-size="11" text-anchor="middle" font-weight="bold" fill="${c}">${role}</text>`;
+  if (say) {
+    const w = Math.max(60, say.length * 11 + 14);
+    const [bx, by] = pos === "up" ? [x - 20, y - 50] : pos === "down" ? [x - 20, y + 66] : [x + 14, y - 32];
+    s += `<rect x="${bx}" y="${by}" width="${w}" height="22" rx="8" fill="#fff" stroke="${c}" stroke-width="1.5"/>
+          <text x="${bx + 7}" y="${by + 15}" font-size="11" fill="${c}" font-weight="bold">${say}</text>`;
+  }
+  return s;
+}
+function tank(key, label, hot, maxV, shown) {
+  const x = TX[key], vol = shown !== undefined ? shown : M[key], lv = Math.min(1, vol / maxV) * (TANK.h - 6), wy = TANK.top + TANK.h - 3 - lv;
   return { y: wy, svg:
     `<rect x="${x - TANK.w / 2 - 5}" y="${TANK.top + TANK.h}" width="${TANK.w + 10}" height="7" fill="#8f897d"/>
      <rect x="${x - TANK.w / 2 + 3}" y="${wy}" width="${TANK.w - 6}" height="${lv}" fill="#3d8fd6" opacity=".8"/>
@@ -145,7 +167,6 @@ function tank(key, label, hot, maxV) {
      <text x="${x}" y="${TANK.top + TANK.h + 22}" font-size="11" text-anchor="middle">${label}</text>
      <text x="${x}" y="${TANK.top + TANK.h + 36}" font-size="11" text-anchor="middle" fill="#6a5e4c">${vol.toFixed(1)}u</text>` };
 }
-// 浮き比較器：2つの槽の浮きの上に竿を渡す。竿は水位の差で傾く（不感帯 0.5u 分）
 function floatComparator(kP, kM, tP, tM, title, valText) {
   const xP = TX[kP], xM = TX[kM], cx = (xP + xM) / 2, ly = TANK.top - 40, half = (xM - xP) / 2;
   const diff = M[kP] - M[kM], tilt = diff > 0.5 ? -1 : diff < -0.5 ? 1 : 0;
@@ -159,135 +180,152 @@ function floatComparator(kP, kM, tP, tM, title, valText) {
         <line x1="${cx}" y1="${ly}" x2="${cx}" y2="${TANK.top + TANK.h}" stroke="#c9a27a" stroke-width="4"/>
         <text x="${cx}" y="${ly - 22}" font-size="12" text-anchor="middle" font-weight="bold">${title}</text>
         <text x="${cx}" y="${ly - 8}" font-size="10" text-anchor="middle" fill="#c0392b">${tilt === 0 ? "釣り合い（0）" : "≠0"}</text>
-        <text x="${cx}" y="${TANK.top + TANK.h + 60}" font-size="20" text-anchor="middle" font-weight="bold" fill="${BLUE}">${valText}</text>`;
+        <text x="${cx}" y="${TANK.top + TANK.h + 58}" font-size="20" text-anchor="middle" font-weight="bold" fill="${BLUE}">${valText}</text>`;
   return { svg: s, pivot: [cx, ly] };
 }
-function axle(from, to, label) {
-  return `<path d="M${from[0]},${from[1]} C${from[0]},${from[1] - 80} ${to[0]},${to[1] + 80} ${to[0]},${to[1]}" fill="none" stroke="#7a4a26" stroke-width="1.6" stroke-dasharray="2 4" opacity=".8"/>` +
-    (label ? `<text x="${(from[0] + to[0]) / 2 + 4}" y="${(from[1] + to[1]) / 2}" font-size="9" fill="#7a4a26">${label}</text>` : "");
+function axle(from, to) {
+  return `<path d="M${from[0]},${from[1]} C${from[0]},${from[1] - 80} ${to[0]},${to[1] + 80} ${to[0]},${to[1]}" fill="none" stroke="#7a4a26" stroke-width="1.6" stroke-dasharray="2 4" opacity=".8"/>`;
 }
 
 // ---------------- 描画 ----------------
-// INP 入力器：1u のすり切り升の列。電源槽から順に満ち、仕切り（目盛り n）から先は捨て槽へ。栓を一度に開けて＋槽へ流す
-const RACK = { n: 20, x0: 470, dx: 17, w: 13, h: 12 };
-function inputRack(y, n, label, target, isLoad, released) {
-  let s = `<text x="${RACK.x0 - 8}" y="${y + 10}" font-size="11" text-anchor="end" font-weight="bold">${label}</text>`;
-  for (let i = 0; i < RACK.n; i++) {
-    const x = RACK.x0 + i * RACK.dx, full = !released && i < n;
-    s += `<path d="M${x},${y} L${x + 2},${y + RACK.h} L${x + RACK.w - 2},${y + RACK.h} L${x + RACK.w},${y}" fill="${full ? "#3d8fd6" : "#eceae4"}" stroke="#6f6a60" stroke-width="1.2"/>`;
-    if ((i + 1) % 5 === 0) s += `<text x="${x + RACK.w / 2}" y="${y - 3}" font-size="8" text-anchor="middle" fill="#8f897d">${i + 1}</text>`;
-  }
-  const px = RACK.x0 + n * RACK.dx - 2;
-  s += `<rect x="${px}" y="${y - 8}" width="4" height="${RACK.h + 14}" fill="#c0392b"/>
-        <text x="${px + 6}" y="${y + RACK.h + 12}" font-size="9" fill="#c0392b">仕切り ${n}</text>`;
-  // 栓を開けると、仕切りまでの升の水が＋槽へ
-  s += flow(RACK.x0 + 4, y + RACK.h + 2, target, TANK.top - 74, isLoad, isLoad ? `${n}u` : "");
-  return s;
-}
-
 function draw() {
   const p = P || M.plan();
-  const isLoad = p && p.kind === "load";
-  const act = ph => p && p.kind !== "halt" && !isLoad && phase >= ph;
+  const kind = p ? p.kind : "done";
+  const isLoad = kind === "loadA" || kind === "loadB" || kind === "loadEnd", isEval = kind === "eval";
+  const act = ph => p && !isLoad && !isEval && kind !== "done" && phase >= ph;
   const maxV = Math.max(10, M.aP, M.aM, M.bP, M.bM, M.outP, M.outM, M.pcP + 2, M.pcM);
   let s = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${BLUE}"/></marker></defs>`;
-  [["いちばん高い：SRC", Y.src + 10], ["CLK", Y.clk], ["DCD", Y.dcd + 25], ["駅", Y.st + 20], ["切り替え器・振り分け器", R.a0[1]], ["いちばん低い：固定の槽", TANK.top + 70]]
+  [["いちばん高い：SRC", Y.src + 10], ["計数添水・元栓", Y.cnt], ["CLK・DCD", Y.dcd + 10], ["駅", Y.st + 20], ["切り替え器・振り分け器", R.a0[1]], ["いちばん低い：固定の槽", TANK.top + 70]]
     .forEach(([t, y]) => s += `<text x="1236" y="${y}" font-size="10" text-anchor="end" fill="#b0a894">${t}</text>`);
   s += `<line x1="20" y1="${TANK.top + TANK.h + 7}" x2="1220" y2="${TANK.top + TANK.h + 7}" stroke="#8f897d" stroke-width="2"/>`;
 
-  // SRC・CLK・DCD
-  s += `<rect x="40" y="${Y.src}" width="110" height="52" fill="#eceae4" stroke="#6f6a60" stroke-width="2"/>
-        <rect x="42" y="${Y.src + 10}" width="106" height="40" fill="#3d8fd6" opacity=".8"/>
-        <text x="95" y="${Y.src - 6}" font-size="12" text-anchor="middle" font-weight="bold">SRC 電源槽（漏刻）</text>` + flow(140, Y.src + 48, 170, Y.clk - 10, act(1));
-  s += `<text x="${RACK.x0}" y="${Y.src - 8}" font-size="12" font-weight="bold">INP 入力器（1u のすり切り升の列。スタート前に仕切りを目盛りに差す）</text>` +
-       `<path d="M150,${Y.src + 20} L${RACK.x0 - 2},${Y.src + 20}" fill="none" stroke="${GREY}" stroke-width="1.2" stroke-dasharray="4 5"/>` +
-       inputRack(Y.src + 18, M.a0, "a", TX.aP, isLoad && phase >= 1, M.loaded) +
-       inputRack(Y.src + 58, M.b0, "b", TX.bP, isLoad && phase >= 1, M.loaded);
-  const tipped = phase === 1;
-  s += `<g transform="rotate(${tipped ? 28 : -14} 200 ${Y.clk})"><rect x="158" y="${Y.clk - 9}" width="84" height="18" rx="9" fill="#cfe0a6" stroke="#6b8f2a" stroke-width="2"/>
-        <rect x="161" y="${Y.clk - 6}" width="${tipped ? 0 : 38}" height="12" fill="#3d8fd6" opacity=".8"/></g><circle cx="200" cy="${Y.clk}" r="4" fill="#4a2e12"/>
-        <text x="200" y="${Y.clk + 30}" font-size="11" text-anchor="middle">CLK 拍発生器（添水）${M.pulse}u</text>` + flow(242, Y.clk + 4, 120, Y.dcd - 6, act(1));
-  const binX = k => 75 + k * 30, pcv = Math.max(0, Math.min(3, M.pcP - M.pcM));
-  s += `<path d="M106,${Y.dcd - 8} L134,${Y.dcd - 8} L124,${Y.dcd + 4} L116,${Y.dcd + 4} Z" fill="#e7d3bf" stroke="#7a4a26"/>
-        <circle cx="120" cy="${Y.dcd + 4}" r="5" fill="#2b1a0c"/>
-        <line x1="120" y1="${Y.dcd + 4}" x2="${binX(pcv)}" y2="${Y.bins - 8}" stroke="${act(2) ? BLUE : "#6b8f2a"}" stroke-width="6" stroke-linecap="round"/>
-        <text x="140" y="${Y.dcd}" font-size="11">DCD デコーダ</text>`;
+  // ---- 給水係と電源槽
+  s += person(50, Y.src + 14, "給水係", phase >= 1 && (isLoad || act(1)), M.used ? `注いだ水 ${M.used}u` : "電源槽を満たす", "down");
+  s += `<rect x="${XC.src - 55}" y="${Y.src}" width="110" height="52" fill="#eceae4" stroke="#6f6a60" stroke-width="2"/>
+        <rect x="${XC.src - 53}" y="${Y.src + 8}" width="106" height="42" fill="#3d8fd6" opacity=".8"/>
+        <text x="${XC.src}" y="${Y.src - 6}" font-size="12" text-anchor="middle" font-weight="bold">SRC 電源槽</text>
+        <path d="M${XC.src - 40},${Y.src - 16} q 10,-14 20,0" fill="none" stroke="${HUM}" stroke-width="2" opacity=".6"/>`;
+  // ---- 元栓と計数添水
+  const valveOpen = M.loaded ? !M.finished() && !M.halted() : true;
+  const flowing = (isLoad && kind !== "loadEnd" && phase >= 1) || act(1);
+  s += `<rect x="${XC.src + 55}" y="${Y.valve - 8}" width="22" height="14" rx="3" fill="${valveOpen ? "#d5e8d4" : "#f5d5d0"}" stroke="#6f6a60"/>
+        <text x="${XC.src + 66}" y="${Y.valve + 18}" font-size="10" text-anchor="middle">元栓</text>` +
+       flow(XC.src + 77, Y.valve, XC.cnt - 30, Y.cnt - 8, flowing);
+  const cntTipped = phase === 1 && (kind === "loadA" || kind === "loadB" || act(1));
+  s += sozu(XC.cnt, Y.cnt, 70, cntTipped, phase === 0 ? 0.6 : 1, "計数添水（1u ごとに傾く）", `傾いた回数 ${M.tips}`);
+  // ---- 元栓管理係の樋（a へ／b へ／CLK へ）
+  const routeTo = !M.loaded ? (M.inA < M.a0 ? "a" : M.inB < M.b0 ? "b" : "clk") : "clk";
+  const rOut = { a: [XC.route - 40, Y.route + 22], b: [XC.route, Y.route + 22], clk: [XC.route + 40, Y.route + 22] };
+  s += flow(XC.cnt + 30, Y.cnt + 10, XC.route, Y.route - 10, flowing);
+  s += `<circle cx="${XC.route}" cy="${Y.route - 6}" r="4" fill="#2b1a0c"/>
+        <line x1="${XC.route}" y1="${Y.route - 6}" x2="${rOut[routeTo][0]}" y2="${Y.route + 14}" stroke="${flowing ? BLUE : "#6b8f2a"}" stroke-width="6" stroke-linecap="round"/>` +
+       cup(rOut.a[0], rOut.a[1], 22, 12, flowing && routeTo === "a", "a へ") + cup(rOut.b[0], rOut.b[1], 22, 12, flowing && routeTo === "b", "b へ") + cup(rOut.clk[0], rOut.clk[1], 22, 12, flowing && routeTo === "clk", "CLK へ");
+  // 入力の水路（a・b の＋槽へ）
+  s += flow(rOut.a[0], rOut.a[1] + 14, TX.aP, TANK.top - 2, (kind === "loadA") && phase >= 1, kind === "loadA" ? "1u" : "") +
+       flow(rOut.b[0], rOut.b[1] + 14, TX.bP, TANK.top - 2, (kind === "loadB") && phase >= 1, kind === "loadB" ? "1u" : "");
+  const sayValve = kind === "loadA" ? `a へ ${M.inA + (phase >= 1 ? 1 : 0)} / ${M.a0}` : kind === "loadB" ? `b へ ${M.inB + (phase >= 1 ? 1 : 0)} / ${M.b0}` :
+    kind === "loadEnd" ? "樋を CLK へ" : (M.halted() ? "停止 → 元栓を閉める" : M.loaded ? "見ている" : "");
+  s += person(XC.route + 110, Y.route - 56, "元栓管理係", isLoad || (M.halted() && !M.finished()), sayValve, "up");
+  // ---- CLK（計数添水3回分）
+  s += flow(rOut.clk[0], rOut.clk[1] + 14, XC.clk - 35, Y.clk - 8, act(1));
+  s += sozu(XC.clk, Y.clk, 84, phase === 1 && act(1), phase === 0 ? 0.5 : 1, `CLK 拍発生器（${M.pulse}u）`, "計数添水 3回分で傾く");
+  s += flow(XC.clk + 42, Y.clk + 4, XC.dcd, Y.dcd - 6, act(1));
+  // ---- DCD
+  const binX = k => XC.dcd - 45 + k * 30, pcv = Math.max(0, Math.min(3, M.pcP - M.pcM));
+  s += `<path d="M${XC.dcd - 14},${Y.dcd - 8} L${XC.dcd + 14},${Y.dcd - 8} L${XC.dcd + 4},${Y.dcd + 4} L${XC.dcd - 4},${Y.dcd + 4} Z" fill="#e7d3bf" stroke="#7a4a26"/>
+        <circle cx="${XC.dcd}" cy="${Y.dcd + 4}" r="5" fill="#2b1a0c"/>
+        <line x1="${XC.dcd}" y1="${Y.dcd + 4}" x2="${binX(pcv)}" y2="${Y.bins - 8}" stroke="${act(2) ? BLUE : "#6b8f2a"}" stroke-width="6" stroke-linecap="round"/>
+        <text x="${XC.dcd + 20}" y="${Y.dcd}" font-size="11">DCD デコーダ</text>`;
   [0, 1, 2, 3].forEach(k => {
     const on = act(2) && M.pc() === k;
-    s += cup(binX(k), Y.bins, 22, 14, on, `${k}`) + flow(binX(k), Y.bins + 16, k < 3 ? ST[k].cx - ST[k].w / 2 + 20 : ST[3].cx, Y.st, on);
+    s += cup(binX(k), Y.bins, 22, 14, on, `${k}`) + flow(binX(k), Y.bins + 16, k < 3 ? ST[k].cx + ST[k].w / 2 - 20 : ST[3].cx, Y.st, on);
   });
-
-  // 駅
+  // ---- 駅
   ST.forEach((st, k) => {
     const on = act(2) && M.pc() === k;
     s += `<rect x="${st.cx - st.w / 2}" y="${Y.st}" width="${st.w}" height="${Y.stH}" rx="8" fill="${on ? "#eef5fc" : "#fbf8f0"}" stroke="${on ? BLUE : "#d8cfba"}" stroke-width="${on ? 3 : 1.5}"/>
           <text x="${st.cx}" y="${Y.st + 20}" font-size="13" text-anchor="middle" font-weight="bold">${STATIONS[k].name}</text>
           <text x="${st.cx}" y="${Y.st + 38}" font-size="10" text-anchor="middle" fill="#6a5e4c">${STATIONS[k].note}</text>
-          <text x="${st.cx}" y="${Y.st + 56}" font-size="10" text-anchor="middle" fill="#6a5e4c">${k < 3 ? "SPL 量り分け器（1u ずつ）" : "拍の水は捨て槽へ"}</text>`;
+          <text x="${st.cx}" y="${Y.st + 54}" font-size="10" text-anchor="middle" fill="#6a5e4c">${k < 3 ? "SPL 量り分け器（1u ずつ）" : "拍の水は捨て槽へ"}</text>`;
   });
-  s += `<rect x="1110" y="${Y.st + 10}" width="80" height="50" fill="#eceae4" stroke="#6f6a60" stroke-width="2"/><text x="1150" y="${Y.st + 76}" font-size="11" text-anchor="middle">SNK 捨て槽</text>` +
-       flow(ST[3].cx + 55, Y.st + 35, 1110, Y.st + 35, act(2) && M.pc() === 3);
-
-  // 駅0：SW1 → a は 0 か → b は 0 か
-  const lit = (k, kind) => act(3) && p.k === k && p.kind === kind;
+  s += `<rect x="${XC.snk - 40}" y="${Y.st + 8}" width="80" height="48" fill="#eceae4" stroke="#6f6a60" stroke-width="2"/><text x="${XC.snk}" y="${Y.st + 72}" font-size="11" text-anchor="middle">SNK 捨て槽</text>` +
+       flow(ST[3].cx + 55, Y.st + 33, XC.snk - 40, Y.st + 33, act(2) && M.pc() === 3);
+  // ---- 振り分け器と切り替え器
+  const lit = (k, kd) => act(3) && p.k === k && p.kind === kd;
   const on0 = act(3) && p.k === 0;
   s += flow(ST[0].cx - 30, Y.st + Y.stH, R.sw1[0], R.sw1[1] - 18, on0);
   s += sw(R.sw1[0], R.sw1[1], "SW1", M.mode === "add" ? "足し算：素通り" : "引き算：相殺へ");
   s += flow(R.sw1[0] - 22, R.sw1[1], R.sw1[0] - 46, R.sw1[1] + 28, lit(0, "bypass"));
   s += flow(R.sw1[0], R.sw1[1] + 18, R.a0[0], R.a0[1] - 6, on0 && M.mode === "sub");
-  s += rte(R.a0[0], R.a0[1], M.aNZ(), on0 && M.mode === "sub", "a は 0 か", "0", "≠0", lit(0, "a0") ? "l" : (lit(0, "b0") || lit(0, "both")) ? "r" : "");
+  s += rte(R.a0[0], R.a0[1], M.aNZ(), on0 && M.mode === "sub", "a は 0 か", lit(0, "a0") ? "l" : (lit(0, "b0") || lit(0, "both")) ? "r" : "");
   s += flow(R.a0[0] + 24, R.a0[1] + 34, R.b0[0], R.b0[1] - 6, lit(0, "b0") || lit(0, "both"));
-  s += rte(R.b0[0], R.b0[1], M.bNZ(), lit(0, "b0") || lit(0, "both"), "b は 0 か", "0", "≠0", lit(0, "b0") ? "l" : lit(0, "both") ? "r" : "");
-  // 駅1：b は 0 か → SW2
+  s += rte(R.b0[0], R.b0[1], M.bNZ(), lit(0, "b0") || lit(0, "both"), "b は 0 か", lit(0, "b0") ? "l" : lit(0, "both") ? "r" : "");
   s += flow(ST[1].cx, Y.st + Y.stH, R.r1[0], R.r1[1] - 6, act(3) && p.k === 1);
-  s += rte(R.r1[0], R.r1[1], M.bNZ(), act(3) && p.k === 1, "b は 0 か", "0", "≠0", lit(1, "z") ? "l" : lit(1, "nz") ? "r" : "");
+  s += rte(R.r1[0], R.r1[1], M.bNZ(), act(3) && p.k === 1, "b は 0 か", lit(1, "z") ? "l" : lit(1, "nz") ? "r" : "");
   s += flow(R.r1[0] + 24, R.r1[1] + 34, R.sw2[0], R.sw2[1] - 18, lit(1, "nz"));
   s += sw(R.sw2[0], R.sw2[1], "SW2", M.mode === "add" ? "→ 正の答えの桶" : "→ 負の答えの桶");
   s += `<path d="M${R.sw1[0] + 22},${R.sw1[1]} C${R.sw1[0] + 160},${R.sw1[1] - 40} ${R.sw2[0] - 160},${R.sw2[1] - 60} ${R.sw2[0] - 22},${R.sw2[1]}" fill="none" stroke="#b9770e" stroke-width="2" stroke-dasharray="6 4"/>
         <text x="${(R.sw1[0] + R.sw2[0]) / 2}" y="${R.sw1[1] - 22}" font-size="10" text-anchor="middle" fill="#7a4a08">連動（レバー1本）</text>`;
-  // 駅2：a は 0 か
   s += flow(ST[2].cx, Y.st + Y.stH, R.r2[0], R.r2[1] - 6, act(3) && p.k === 2);
-  s += rte(R.r2[0], R.r2[1], M.aNZ(), act(3) && p.k === 2, "a は 0 か", "0", "≠0", lit(2, "z") ? "l" : lit(2, "nz") ? "r" : "");
+  s += rte(R.r2[0], R.r2[1], M.aNZ(), act(3) && p.k === 2, "a は 0 か", lit(2, "z") ? "l" : lit(2, "nz") ? "r" : "");
 
-  // 固定の槽
+  // ---- 固定の槽
   const T = {};
-  const hotT = key => act(4) && p.dep.some(d => d.to === key);
+  const hotT = key => (act(4) && p.dep.some(d => d.to === key)) || (isLoad && phase >= 1 && p.dep.some(d => d.to === key));
+  const evalKey = M.evalSign < 0 ? "outM" : "outP";
   [["aP", "a の＋槽"], ["aM", "a の−槽"], ["bP", "b の＋槽"], ["bM", "b の−槽"], ["outP", "正の答えの桶"], ["outM", "負の答えの桶"], ["pcP", "PCR の＋槽"], ["pcM", "PCR の−槽"]]
-    .forEach(([k, n]) => { T[k] = tank(k, n, hotT(k), maxV); s += T[k].svg; });
+    .forEach(([k, n]) => {
+      const shown = (k === "outP" || k === "outM") && k === evalKey ? Math.max(0, M[k] - M.drained) : undefined;
+      T[k] = tank(k, n, hotT(k) || (isEval && phase >= 1 && k === evalKey), maxV, shown); s += T[k].svg;
+    });
   const fa = floatComparator("aP", "aM", T.aP, T.aM, "a（浮き比較器）", `${M.a()}`);
   const fb = floatComparator("bP", "bM", T.bP, T.bM, "b（浮き比較器）", `${M.b()}`);
-  const fp = floatComparator("pcP", "pcM", T.pcP, T.pcM, "PCR（浮き比較器）", `駅${M.pc()}`);
+  const fp = floatComparator("pcP", "pcM", T.pcP, T.pcM, "PCR（浮き比較器）", M.loaded ? `駅${M.pc()}` : "—");
   s += fa.svg + fb.svg + fp.svg;
   s += `<text x="${(TX.outP + TX.outM) / 2}" y="${TANK.top - 30}" font-size="13" text-anchor="middle" font-weight="bold">答え（OUT：桶2つ）</text>
-        <text x="${(TX.outP + TX.outM) / 2}" y="${TANK.top - 14}" font-size="10" text-anchor="middle" fill="#6a5e4c">どちらか一方だけに水が入る</text>
-        <text x="${(TX.outP + TX.outM) / 2}" y="${TANK.top + TANK.h + 60}" font-size="20" text-anchor="middle" font-weight="bold" fill="${BLUE}">${M.halted() ? M.value() : "…"}</text>`;
-  // 軸口（1つの竿に振り分け器をいくつつないでもよい）
-  s += axle(fa.pivot, R.a0) + axle(fa.pivot, R.r2) + axle(fb.pivot, R.b0) + axle(fb.pivot, R.r1) + axle(fp.pivot, [120, Y.dcd + 4]);
+        <text x="${(TX.outP + TX.outM) / 2}" y="${TANK.top - 14}" font-size="10" text-anchor="middle" fill="#6a5e4c">どちらか一方だけに水が入る</text>`;
+  s += axle(fa.pivot, R.a0) + axle(fa.pivot, R.r2) + axle(fb.pivot, R.b0) + axle(fb.pivot, R.r1) + axle(fp.pivot, [XC.dcd, Y.dcd + 4]);
 
-  // いまの拍で水が槽へ入る道（遅延升を通る）
-  if (p && p.kind !== "halt" && !isLoad) {
-    let o = outlet(p);
+  // ---- 計算の拍の水（遅延升を通って槽へ）
+  if (act(1) && p.dep) {
+    const o = outlet(p);
     p.dep.forEach((d, i) => {
       let from = o;
       if (p.k === 1 && p.kind === "nz" && (d.to === "outP" || d.to === "outM")) from = [R.sw2[0], R.sw2[1] + 18];
-      const tx = TX[d.to], ty = TANK.top - 4, dy = TANK.top - 70;
-      s += flow(from[0] + i * 4, from[1], tx, dy, act(3), "") + cup(tx, dy, 22, 14, phase === 3, "DLY") + flow(tx, dy + 16, tx, ty, act(4), act(4) ? `1u${d.to === "pcP" && d.amt > 1 ? `×${d.amt}` : ""}` : "");
+      const tx = TX[d.to], dy = TANK.top - 70;
+      s += flow(from[0] + i * 4, from[1], tx, dy, act(3), "") + cup(tx, dy, 22, 14, phase === 3, "DLY") + flow(tx, dy + 16, tx, TANK.top - 4, act(4), act(4) ? `1u${d.to === "pcP" && d.amt > 1 ? `×${d.amt}` : ""}` : "");
     });
   }
+
+  // ---- 評価：カウント係が答えの桶の栓を開け、1u ごとに傾く添水を数える
+  const evOn = isEval && phase >= 1, tap = [TX[evalKey] + TANK.w / 2, TANK.top + TANK.h - 10];
+  s += flow(tap[0], tap[1], EV.sozu[0] - 30, EV.sozu[1] - 6, evOn, evOn ? "1u" : "");
+  s += sozu(EV.sozu[0], EV.sozu[1], 60, evOn, M.halted() ? 0.7 : 0, "計数添水（評価用）", "");
+  const sayCnt = M.finished() ? `${M.evalSign < 0 ? "負" : "正"}の桶 ${M.evalCount}回 → ${M.counted()}` :
+    isEval ? `${M.evalSign < 0 || (M.evalCount === 0 && M.outM > M.outP) ? "負" : "正"}の桶：${M.evalCount + (phase >= 1 ? 1 : 0)} 回` : M.halted() ? "栓を開ける" : "";
+  s += person(EV.person[0], EV.person[1] - 40, "カウント係", isEval || M.finished(), sayCnt, "up");
+
   $("map").innerHTML = s;
   drawSide(p);
 }
 
 function caption(p) {
   if (!p) return "セットしてください。";
-  if (p.kind === "load") return phase === 0
-    ? `<b>入力器（INP）</b>：電源槽から 1u のすり切り升の列に水が入り、仕切りまでの升が満ちている（a ＝ ${M.a0} 個、b ＝ ${M.b0} 個）。仕切りから先へ溢れた水は捨て槽へ。「1拍」で栓を開けて流す。`
-    : `<b>入力（INP）</b>：入力器の栓を一度に開ける。仕切りまでの升の水が、a の＋槽へ <b>${M.a0}u</b>、b の＋槽へ <b>${M.b0}u</b> 流れ込む。人がしたのは「仕切りを目盛りに差す」ことだけ。`;
-  if (p.kind === "halt") {
-    const v = M.value();
-    return `<b>停止</b>：答え ＝ <b>${v}</b>。${v < 0 ? `<b>負の答えの桶</b>に ${M.outM.toFixed(0)}u` : `<b>正の答えの桶</b>に ${M.outP.toFixed(0)}u`}だけが入っている（もう一方は空）。a・b のレジスタは 0 に戻った。読む人は引き算をしなくてよい。`;
+  const H = t => `<span class="hum">${t}</span>`;
+  switch (p.kind) {
+    case "loadA": case "loadB": {
+      const isA = p.kind === "loadA", n = (isA ? M.inA : M.inB) + 1, tot = isA ? M.a0 : M.b0;
+      return phase === 0
+        ? `<b>入力</b>：${H("元栓管理係")}が元栓を開けている。計数添水が 1u ためて傾くたびに「カコン」と鳴る。樋は <b>${isA ? "a" : "b"} の＋槽</b>へ向いている。`
+        : `<b>入力</b>：計数添水が傾いた（カコン）。1u が <b>${isA ? "a" : "b"} の＋槽</b>へ。${H("元栓管理係")}は「${n}」と数える（${n} / ${tot}）。${n === tot ? (isA ? `a の数に達したので、次は樋を b へ向ける。` : `b の数に達したので、次は樋を CLK へ向ける。`) : ""}`;
+    }
+    case "loadEnd": return `<b>入力の終わり</b>：${H("元栓管理係")}が樋を <b>CLK へ</b>向けた（a ＝ ${M.a0}、b ＝ ${M.b0} を入れ終えた）。ここから先は、水が上から下へ流れるだけで計算が進む。人は見ているだけ。`;
+    case "eval": return phase === 0
+      ? `<b>停止</b>：PCR が駅3（停止）を指し、拍の水は捨て槽へ流れるだけになった。${H("元栓管理係")}が元栓を閉める。${H("カウント係")}が答えの桶の栓を開ける。`
+      : `<b>評価</b>：${H("カウント係")}が開けた答えの桶から、計数添水へ水が流れ、1u たまって傾いた（カコン）。${H("カウント係")}は「${M.evalCount + 1}」と数える。`;
+    case "done": return `<b>答え ＝ ${M.counted()}</b>：${H("カウント係")}は${M.evalSign < 0 ? "<b>負の答えの桶</b>" : "<b>正の答えの桶</b>"}から ${M.evalCount} 回数えた。もう一方の桶は空。読む人は引き算をしていない。`;
   }
-  if (phase === 0) return `次の拍は<b>${STATIONS[p.k].name}</b>（a ＝ ${M.a()}、b ＝ ${M.b()}）。「1拍」で、水の流れを4段階で見られます。`;
+  if (phase === 0) return `次の拍は<b>${STATIONS[p.k].name}</b>（a ＝ ${M.a()}、b ＝ ${M.b()}）。`;
   const names = p.dep.map(d => `${TANK_NAME[d.to]}${d.to === "pcP" && d.amt > 1 ? `（${d.amt}u）` : ""}`).join("、");
   const why = {
     "0:bypass": "切り替え器 SW1 が「足し算」なので、相殺はせずに素通りする。",
@@ -300,21 +338,26 @@ function caption(p) {
     "2:nz": `a ＝ ${M.a()} なので、a から 1 取って、正の答えの桶へ移す。`,
   }[`${p.k}:${p.kind}`];
   return [null,
-    `<b>① 拍（CLK）</b>：電源槽から流れ込む水で拍発生器が満ち、${M.pulse}u をまとめて落とす。`,
+    `<b>① 拍（CLK）</b>：計数添水が3回傾いて CLK に ${M.pulse}u たまり、CLK が傾いてまとめて落とす。`,
     `<b>② デコーダ（DCD）</b>：PCR の浮き比較器の竿（値 ${M.pc()}）が、軸口で振り分け器を動かす。水は<b>${STATIONS[p.k].name}</b>へ。`,
     `<b>③ 振り分け</b>：${why}`,
     `<b>④ 固定の槽へ</b>：遅延升からゆっくり落ちて、${names} に入る。槽は動かず、浮きが上がって竿が傾く。`][phase];
 }
 
 function drawSide(p) {
-  $("prog").innerHTML = STATIONS.map((st, k) =>
-    `<div class="${p && p.k === k ? "cur" : ""}">${st.name}${st.note ? `<small>${st.note}</small>` : ""}</div>`).join("");
+  const kind = p ? p.kind : "done";
+  const stage = !M.loaded ? 0 : !M.halted() ? 1 : 2;
+  const steps = [
+    `<div class="${stage === 0 ? "cur" : ""}">入力（人）：元栓管理係が計数添水を数え、a 回 a の槽へ、b 回 b の槽へ。終わったら樋を CLK へ<small>給水係は電源槽に水を注ぎ続ける</small></div>`,
+    ...STATIONS.map((st, k) => `<div class="${stage === 1 && p && p.k === k ? "cur" : ""}">${st.name}${st.note ? `<small>${st.note}</small>` : ""}</div>`),
+    `<div class="${stage === 2 ? "cur" : ""}">評価（人）：元栓を閉め、カウント係が答えの桶を 1u ずつ数える<small>どちらの桶から流れたかで正負を読む</small></div>`];
+  $("prog").innerHTML = steps.join("");
   $("caption").innerHTML = caption(p);
-  if (M.halted()) {
+  if (M.finished()) {
     const ok = M.correct();
-    $("result").innerHTML = `${M.a0} ${sym()} ${M.b0} = ${M.value()} <span class="${ok ? "ok" : "ng"}">${ok ? "✓" : "✗（定量升の誤差）"}</span>`;
-  } else $("result").textContent = `${M.a0} ${sym()} ${M.b0} = …（計算中）`;
-  $("stat").innerHTML = `拍 ${M.ticks} 回　電源槽から ${M.used}u<br>a ＝ ${M.a()}　b ＝ ${M.b()}　PCR ＝ 駅${M.pc()}<br>正の答えの桶 ${M.outP.toFixed(1)}u　負の答えの桶 ${M.outM.toFixed(1)}u`;
+    $("result").innerHTML = `${M.a0} ${sym()} ${M.b0} = ${M.counted()} <span class="${ok ? "ok" : "ng"}">${ok ? "✓" : "✗（升・添水の誤差）"}</span>`;
+  } else $("result").textContent = `${M.a0} ${sym()} ${M.b0} = …（${stage === 0 ? "入力中" : stage === 1 ? "計算中" : "数えている"}）`;
+  $("stat").innerHTML = `計数添水 ${M.tips} 回　計算の拍 ${M.ticks} 回　給水 ${M.used}u<br>a ＝ ${M.a()}　b ＝ ${M.b()}　PCR ＝ ${M.loaded ? "駅" + M.pc() : "—"}<br>正の答えの桶 ${M.outP.toFixed(1)}u　負の答えの桶 ${M.outM.toFixed(1)}u`;
   $("log").innerHTML = logs.map(l => `<div>${l}</div>`).join("");
   const lock = running || busy;
   document.querySelectorAll('input[name="mode"]').forEach(r => r.disabled = lock);
@@ -326,39 +369,47 @@ function setup() {
   stop();
   const a = Math.max(0, Math.min(20, +$("a").value || 0)), b = Math.max(0, Math.min(20, +$("b").value || 0));
   M = new AddSubMachine(a, b, mode(), { sd: +$("sd").value });
-  logs = [`セット：入力器の仕切りを a=${a}, b=${b} の目盛りに差し、切り替えレバーを${M.mode === "add" ? "足し算" : "引き算"}に倒した。電源槽を満たした（ここから先は人の手なし）`];
+  logs = [`準備：給水係が電源槽を満たした。元栓管理係が切り替えレバーを${M.mode === "add" ? "足し算" : "引き算"}に倒した（入力 a=${a}, b=${b}）`];
   draw();
 }
 function applyTick() {
   const p = M.plan();
   M.tick();
-  if (p.kind === "load") { logs.unshift(`入力器の栓を開けた：a の＋槽へ ${M.a0}u、b の＋槽へ ${M.b0}u`); return; }
-  const msg = { bypass: "素通り", a0: "a = 0 → 駅1", b0: "b = 0 → 駅2", both: "a・b から 1 ずつ相殺", z: "0 → 次の駅", nz: "1 を答えの桶へ" }[p.kind];
-  logs.unshift(`${M.ticks}：${STATIONS[p.k].name}：${msg}`);
-  if (M.halted()) logs.unshift(`${M.ticks}：停止。答え ${M.value()}`);
+  const lines = {
+    loadA: () => `カコン：a へ 1u（${M.inA} / ${M.a0}）`,
+    loadB: () => `カコン：b へ 1u（${M.inB} / ${M.b0}）`,
+    loadEnd: () => `元栓管理係：樋を CLK へ（入力おわり）`,
+    eval: () => M.evalDone ? `カウント係：${M.evalSign < 0 ? "負" : "正"}の桶から ${M.evalCount} 回 → 答え ${M.counted()}` : `カウント係：カコン ${M.evalCount}`,
+  };
+  if (lines[p.kind]) logs.unshift(lines[p.kind]());
+  else {
+    const msg = { bypass: "素通り", a0: "a = 0 → 駅1", b0: "b = 0 → 駅2", both: "a・b から 1 ずつ相殺", z: "0 → 次の駅", nz: "1 を答えの桶へ" }[p.kind];
+    logs.unshift(`拍 ${M.ticks}：${STATIONS[p.k].name}：${msg}`);
+    if (M.halted()) logs.unshift(`停止（拍 ${M.ticks}）。元栓管理係が元栓を閉める`);
+  }
   logs = logs.slice(0, 80);
 }
 const wait = ms => new Promise(res => setTimeout(res, ms));
 async function stepDetailed() {
-  if (busy || !M || M.halted()) return false;
+  if (busy || !M || M.finished()) return false;
   busy = true;
   const my = ++animId, m = M, alive = () => my === animId && m === M;
   try {
     P = m.plan();
     const dt = 2600 / +$("spd").value;
-    const last = P.kind === "load" ? 1 : 4;
-    for (phase = 1; phase <= last; phase++) { draw(); await wait(dt); if (!alive()) return false; }
+    const last = ["loadA", "loadB", "loadEnd", "eval"].includes(P.kind) ? 1 : 4;
+    for (phase = 1; phase <= last; phase++) { draw(); await wait(last === 1 ? dt * 0.6 : dt); if (!alive()) return false; }
     applyTick(); phase = 0; P = null; draw();
     return true;
   } finally { if (my === animId) busy = false; }
 }
-function stepFast() { if (!M || M.halted()) return; applyTick(); phase = 0; P = null; draw(); }
+function stepFast() { if (!M || M.finished()) return; applyTick(); phase = 0; P = null; draw(); }
 async function run() {
   if (running) { stop(); draw(); return; }
-  if (!M || M.halted()) setup();
+  if (!M || M.finished()) setup();
   const my = ++runId;
   running = true; $("run").textContent = "■ 停止";
-  while (my === runId && !M.halted()) {
+  while (my === runId && !M.finished()) {
     if ($("detail").checked) { if (!(await stepDetailed())) await wait(50); }
     else { stepFast(); await wait(1000 / +$("spd").value); }
   }
@@ -377,7 +428,7 @@ function testAll() {
     for (let a = 0; a <= 9; a++) for (let b = 0; b <= 9; b++) { const m = new AddSubMachine(a, b, md, { sd }); m.run(); tot++; ok += m.correct(); }
     lines.push(`${md === "add" ? "足し算" : "引き算"}：${ok}/${tot}`);
   }
-  logs.unshift(`全部試す（a, b = 0〜9、定量升の精度 ±${sd}u）：${lines.join("　")}（答えが片方の桶だけに入っていることも確認）`);
+  logs.unshift(`全部試す（a, b = 0〜9、精度 ±${sd}u、入力から評価まで）：${lines.join("　")}`);
   draw();
 }
 $("set").onclick = setup; $("step").onclick = () => $("detail").checked ? stepDetailed() : stepFast();
