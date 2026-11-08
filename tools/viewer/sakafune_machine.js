@@ -100,38 +100,42 @@
     halted() { return this.P.prog.some((ins, k) => ins.op === "HALT" && this.token[k] >= 0.5); }
     current() { return this.token.findIndex(t => t >= 0.5); }
 
+    // 次の1手順で何が起きるか（状態は変えない）。画面の説明に使う
+    plan() {
+      const k = this.current();
+      if (k < 0) return null;
+      const ins = this.P.prog[k];
+      if (ins.op === "HALT") return { k, op: "HALT" };
+      if (ins.op === "INC") return { k, op: "INC", r: ins.r, next: ins.next };
+      const t = this.tilt(ins.r);
+      if (t === "level") return { k, op: "STEP", r: ins.r, tilt: t, row: "center", next: ins.z };
+      const row = t === "north" ? "south" : "north";          // 指し樋は軽い側の列へ
+      let dest = null;
+      if (ins.to) {                                           // C：s の北の皿（＋）か南の皿（−）へ
+        const [s, sign] = ins.to;
+        dest = { s, pan: (row === "south") === (sign > 0) ? "N" : "S" };
+      }
+      return { k, op: "STEP", r: ins.r, tilt: t, row, next: ins.nz, feed: row === "south" ? "S" : "N", dest };
+    }
+
     tick() {
       if (this.halted()) return false;
-      this.last = null;
-      this.P.prog.forEach((ins, k) => {
-        if (ins.op === "HALT" || this.token[k] < 0.5) return;   // 門：手番の水がなければ電源の水は捨て溝へ
-        if (ins.op === "INC") {
-          this.N[ins.r] += this.q();
-          this.stage[ins.next] += this.q();
-          this.last = { k, op: "INC", r: ins.r, next: ins.next };
-          return;
-        }
-        // STEP：盤1枚。A1 の 3u が、すり切りの升 3つに 1u ずつ入る
+      const p = this.plan();                       // 手番の水がある駅は1つだけ（門：ほかの駅の電源の水は捨て溝へ）
+      this.last = p;
+      if (p.op === "INC") {
+        this.N[p.r] += this.q();
+        this.stage[p.next] += this.q();
+      } else if (p.row === "center") {             // 中央の列
+        this.stage[p.next] += this.q();            // E1 → 次の手番
+        this.downstream += this.q();               // E2 → F → 下流
+        this.waste += this.q();                    // G
+      } else {                                     // STEP：電源の 3u が、すり切りの升 B・C・D に 1u ずつ入る
         const [q1, q2, q3] = [this.q(), this.q(), this.q()];
-        const t = this.tilt(ins.r);
-        let row;
-        if (t === "level") {                       // 中央の列
-          row = "center";
-          this.stage[ins.z] += q1;                 // E1 → 次の手番
-          this.downstream += q2;                   // E2 → F → 下流
-          this.waste += q3;                        // G
-        } else {
-          row = t === "north" ? "south" : "north"; // 指し樋は軽い側の列へ
-          if (row === "south") this.S[ins.r] += q1; else this.N[ins.r] += q1;   // B：軽い側の皿へ
-          if (ins.to) {                            // C：s へ移す（r の符号と移す向きで、s の北か南へ）
-            const [s, sign] = ins.to;
-            const plus = (row === "south") === (sign > 0);
-            if (plus) this.N[s] += q2; else this.S[s] += q2;
-          } else this.waste += q2;
-          this.stage[ins.nz] += q3;                // D：次の手番
-        }
-        this.last = { k, op: "STEP", r: ins.r, row, tilt: t };
-      });
+        if (p.feed === "S") this.S[p.r] += q1; else this.N[p.r] += q1;   // B：軽い側の皿へ
+        if (p.dest) { if (p.dest.pan === "N") this.N[p.dest.s] += q2; else this.S[p.dest.s] += q2; }
+        else this.waste += q2;
+        this.stage[p.next] += q3;                  // D：次の手番
+      }
       // 駅の皿を空けて、控えを移す（停止の駅は空けない）
       this.P.prog.forEach((ins, k) => {
         if (ins.op !== "HALT") { if (this.token[k] >= 0.5) this.waste += this.token[k]; this.token[k] = 0; }

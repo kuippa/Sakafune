@@ -6,10 +6,11 @@
 <title>酒船石の四則演算</title>
 <!--
   酒船石の復元仮説（design/09「天秤を釣り合わせる盤」）を命令にした水のカウンタ機械で、四則演算を回すビューア。
-  計算の中身は sakafune_machine.js（Node のテスト test_arith.js と共通）。作成：Claude Opus 5.5（2026-11-07）。
+  盤（石）ごとに、その上に吊った天秤（レジスタ）と、水の通り道を1枚の配置図に描く。1手順を4段階に分けて説明する。
+  計算の中身は sakafune_machine.js（Node のテスト test_arith.js と共通）。作成：Claude Opus 5.5（2026-11-08）。
 -->
 <style>
-  :root { --bg:#f7f2e7; --ink:#3a3226; --sub:#6a5e4c; --panel:#fffdf7; --edge:#c9bfa8; --water:#3d8fd6; --lit:#2f7fc8; --stone:#cfcbc1; --bad:#c0392b; --ok:#2e7d32; }
+  :root { --bg:#f7f2e7; --ink:#3a3226; --sub:#6a5e4c; --panel:#fffdf7; --edge:#c9bfa8; --lit:#2f7fc8; --bad:#c0392b; --ok:#2e7d32; }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); font-family:'Yu Gothic','Meiryo','Hiragino Sans',sans-serif; }
   header { padding:12px 16px 0; }
@@ -20,43 +21,54 @@
   select, button { font:inherit; font-size:14px; padding:4px 10px; border:1px solid var(--edge); background:#fff; border-radius:6px; cursor:pointer; }
   button:hover { background:#f0e8d6; }
   .bar label { font-size:13px; display:flex; align-items:center; gap:6px; }
-  main { display:grid; grid-template-columns: minmax(260px, 1fr) 320px minmax(280px, 1.2fr); gap:12px; padding:0 16px 16px; }
-  @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+  main { display:grid; grid-template-columns: 300px 1fr; gap:12px; padding:0 16px 16px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
   .box { background:var(--panel); border:1px solid var(--edge); border-radius:8px; padding:10px 12px; }
   .box h2 { font-size:14px; margin:0 0 8px; }
   #prog div { font-size:13px; padding:4px 6px; border-radius:4px; margin:2px 0; border-left:4px solid transparent; }
   #prog div.cur { background:#e3eefa; border-left-color:var(--lit); }
   #prog small { color:var(--sub); display:block; }
+  #caption { font-size:16px; line-height:1.6; min-height:52px; padding:8px 12px; background:#e9f2fb; border-left:5px solid var(--lit); border-radius:6px; margin-bottom:8px; }
+  #caption b { color:var(--lit); }
   #result { font-size:22px; font-weight:bold; color:var(--lit); margin:4px 0; }
   #stat, #log { font-size:13px; line-height:1.6; font-variant-numeric:tabular-nums; }
-  #log { max-height:170px; overflow:auto; color:var(--sub); }
+  #log { max-height:200px; overflow:auto; color:var(--sub); }
   .ok { color:var(--ok); } .ng { color:var(--bad); }
   svg text { font-family:'Yu Gothic','Meiryo',sans-serif; }
+  .legend { font-size:12px; color:var(--sub); margin-top:6px; line-height:1.7; }
+  .legend span { display:inline-block; margin-right:14px; }
 </style>
 </head>
 <body>
 <header>
   <h1>酒船石の盤で四則演算</h1>
-  <p class="note">設計09の仮説：酒船石1枚＝「r が 0 でなければ 1 つ 0 へ近づけて s へ移す。0 なら次へ」を実行する盤。盤を何枚か並べ、手番の水で順に動かして四則演算をする。人は毎回同じ手順（電源の水を注ぐ → 升を空ける）をくり返すだけ。</p>
+  <p class="note">設計09の仮説：石1枚＋その上に吊った天秤1本＝レジスタ1つ。天秤の傾きで水の行き先が決まり、石のくぼみに溜まった水がまた天秤の皿へ戻る。人は毎回同じ手順（電源の水を流す → 升を空ける → 控えの水を運ぶ）をくり返すだけ。</p>
 </header>
 <div class="bar">
-  <input id="a" type="number" min="0" max="20" value="7">
-  <select id="op"><option value="add">＋</option><option value="sub">−</option><option value="mul" selected>×</option><option value="div">÷</option></select>
+  <input id="a" type="number" min="0" max="20" value="2">
+  <select id="op"><option value="add" selected>＋</option><option value="sub">−</option><option value="mul">×</option><option value="div">÷</option></select>
   <input id="b" type="number" min="0" max="20" value="3">
   <button id="set">セット</button>
-  <button id="step">1手順</button>
+  <button id="step">1手順（4段階で見る）</button>
   <button id="run">▶ 実行</button>
-  <label>速さ <input id="spd" type="range" min="1" max="60" value="8"><span id="spdv"></span></label>
+  <label><input id="detail" type="checkbox" checked> 段階ごとに見る</label>
+  <label>速さ <input id="spd" type="range" min="1" max="40" value="3"><span id="spdv"></span></label>
   <label>升の精度 ± <input id="sd" type="range" min="0" max="0.15" step="0.01" value="0"><span id="sdv"></span></label>
   <button id="all">全部試す</button>
 </div>
 <main>
-  <div class="box"><h2>プログラム（盤と駅）</h2><div id="prog"></div></div>
-  <div class="box"><h2 id="boardTitle">いまの盤</h2><svg id="board" viewBox="0 0 300 520" width="100%"></svg><div id="boardNote" class="note"></div></div>
   <div style="display:flex;flex-direction:column;gap:12px">
-    <div class="box"><h2>レジスタ（天秤。値 ＝ 北の皿 − 南の皿）</h2><svg id="regs" viewBox="0 0 520 260" width="100%"></svg></div>
+    <div class="box"><h2>プログラム</h2><div id="prog"></div></div>
     <div class="box"><h2>結果</h2><div id="result"></div><div id="stat"></div></div>
     <div class="box"><h2>記録</h2><div id="log"></div></div>
+  </div>
+  <div class="box">
+    <div id="caption"></div>
+    <svg id="map" width="100%"></svg>
+    <div class="legend">
+      <span>■ 灰色の板：石の上面（上が東・高い）</span><span>━ 茶：天秤の竿（左が北の皿・右が南の皿）</span>
+      <span>━ 緑：指し樋（竿と一緒に振れ、軽い側の列へ水を落とす）</span><span>┅ 灰の点線：常にある水の道</span><span>━ 青：いまの段階で水が流れる道</span>
+    </div>
   </div>
 </main>
 <script src="sakafune_machine.js"></script>
@@ -64,138 +76,298 @@
 "use strict";
 const { PROGRAMS, Machine } = Sakafune;
 const $ = id => document.getElementById(id);
-let M, timer = null, logs = [];
+let M, timer = null, logs = [], phase = 0, P = null, busy = false;
 
-function regName(r) { return M.P.regs[r]; }
+const regName = r => M.P.regs[r];
+const TILT_JA = { north: "北が重い", south: "南が重い", level: "釣り合い" };
 function insText(ins, k) {
   if (ins.op === "HALT") return `駅${k}　停止`;
-  if (ins.op === "INC") return `駅${k}　INC ${regName(ins.r)} に 1 足す → 駅${ins.next}`;
-  const to = ins.to ? `${regName(ins.to[0])} へ${ins.to[1] > 0 ? "" : "（引く）"}` : "捨てる";
-  return `駅${k}　盤：${regName(ins.r)} を 1 つ ${to}　≠0→駅${ins.nz}／0→駅${ins.z}`;
+  if (ins.op === "INC") return `駅${k}　${regName(ins.r)} に 1 足す → 駅${ins.next}`;
+  const to = ins.to ? `${regName(ins.to[0])} へ${ins.to[1] > 0 ? "移す" : "（引く）"}` : "捨てる";
+  return `駅${k}　盤：${regName(ins.r)} を 1 つ ${to}<br>　≠0 → 駅${ins.nz}／0 → 駅${ins.z}`;
 }
 
-function setup() {
-  stop();
-  const key = $("op").value;
-  const a = Math.max(0, Math.min(20, +$("a").value || 0)), b = Math.max(0, Math.min(20, +$("b").value || 0));
-  M = new Machine(key, a, b, { sd: +$("sd").value });
-  logs = [`セット：a=${a}, b=${b}（${PROGRAMS[key].label}）。a, b の数だけ北の皿に水を入れ、駅0 に手番の水を置いた`];
-  draw();
-}
-
-function step() {
-  if (!M || M.halted()) { stop(); return; }
-  M.tick();
-  const L = M.last;
-  if (L) {
-    const ins = M.P.prog[L.k];
-    if (L.op === "INC") logs.unshift(`${M.ticks}：駅${L.k} INC → ${regName(L.r)} に 1`);
-    else {
-      const what = L.row === "center" ? `釣り合い → 中央の列（E1 → 駅${ins.z}）`
-        : `${L.tilt === "north" ? "北" : "南"}が重い → ${L.row === "south" ? "南" : "北"}の列（${regName(L.r)} を 0 へ 1、${ins.to ? regName(ins.to[0]) + " へ移す" : "捨てる"}、D → 駅${ins.nz}）`;
-      logs.unshift(`${M.ticks}：駅${L.k} 盤 ${regName(L.r)}：${what}`);
-    }
+// ---------------- 配置 ----------------
+const CW = 1240;
+let L = null;   // 配置：cards, pan[r], tok[k], pit[k][name]
+function layout() {
+  const prog = M.P.prog, owner = {};
+  prog.forEach((ins, k) => { if (ins.op === "STEP") owner[ins.r] = k; });
+  const items = prog.map((ins, k) => ins.op === "STEP" ? { t: "stone", k, w: 290, h: 500 }
+    : ins.op === "INC" ? { t: "inc", k, w: 210, h: 230 } : { t: "halt", k, w: 170, h: 150 });
+  M.P.regs.forEach((_, r) => { if (owner[r] === undefined) items.push({ t: "reg", r, w: 230, h: 230 }); });
+  let x = 10, y = 10, rowH = 0;
+  for (const it of items) {
+    if (x + it.w > CW) { x = 10; y += rowH + 70; rowH = 0; }
+    it.x = x; it.y = y; x += it.w + 40; rowH = Math.max(rowH, it.h);
   }
-  if (M.halted()) { logs.unshift(`${M.ticks}：停止`); stop(); }
-  logs = logs.slice(0, 60);
-  draw();
+  L = { items, owner, H: y + rowH + 20, pan: {}, tok: {}, pit: {} };
 }
 
-function run() {
-  if (timer) { stop(); return; }
-  if (!M || M.halted()) setup();
-  $("run").textContent = "■ 停止";
-  timer = setInterval(() => { for (let i = 0; i < Math.max(1, +$("spd").value / 30); i++) step(); }, 1000 / Math.min(30, +$("spd").value));
-}
-function stop() { if (timer) clearInterval(timer); timer = null; $("run").textContent = "▶ 実行"; }
+// 石の上面の模式（村上ら2017 の並びを目分量で写したもの。実測ではない）
+const PITS = { A1:[150,40], A2:[122,64], A3:[178,64], A4:[150,74], BL:[78,128], CL:[56,196], DL:[80,268], BR:[222,128], CR:[244,196], DR:[220,268],
+               E1:[150,210], E2:[150,290], G:[98,350], F:[150,470] };
 
 // ---------------- 描画 ----------------
 function draw() {
+  layout();
+  const p = P || M.plan();
+  const lit = litSet(p);
+  let s = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f7fc8"/></marker>
+           <marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9b958a"/></marker></defs>`;
+  for (const it of L.items) {
+    s += `<rect x="${it.x}" y="${it.y}" width="${it.w}" height="${it.h}" rx="10" fill="#fbf8f0" stroke="${it.k === p?.k ? "#2f7fc8" : "#d8cfba"}" stroke-width="${it.k === p?.k ? 3 : 1.5}"/>`;
+    if (it.t === "stone") s += drawStone(it, p, lit);
+    else if (it.t === "inc") s += drawInc(it, p, lit);
+    else if (it.t === "halt") s += drawHalt(it);
+    else s += drawRegCard(it);
+  }
+  s += drawWires(p, lit);
+  $("map").setAttribute("viewBox", `0 0 ${CW} ${L.H}`);
+  $("map").innerHTML = s;
+  drawSide(p);
+}
+
+function tokenCup(k, x, y) {
+  const has = M.token[k] >= 0.5;
+  L.tok[k] = [x, y - 16];
+  return `<circle cx="${x}" cy="${y}" r="15" fill="${has ? "#3d8fd6" : "#fff"}" stroke="#7a4a26" stroke-width="2"/>
+          <text x="${x}" y="${y + 30}" font-size="11" text-anchor="middle" fill="#6a5e4c">手番の皿</text>
+          <text x="${x}" y="${y + 44}" font-size="11" text-anchor="middle" fill="${has ? "#2f7fc8" : "#9b958a"}">門：${has ? "開" : "閉"}</text>`;
+}
+
+function balance(r, cx, py, half, lit) {
+  // 天秤の横から見た図。北の皿を左、南の皿を右に描く
+  const t = M.tilt(r), ang = t === "north" ? -10 : t === "south" ? 10 : 0, rad = ang * Math.PI / 180;
+  const lx = cx - half * Math.cos(rad), ly = py - half * Math.sin(rad), rx = cx + half * Math.cos(rad), ry = py + half * Math.sin(rad);
+  const maxW = Math.max(4, ...M.N, ...M.S);
+  let s = `<line x1="${lx}" y1="${ly}" x2="${rx}" y2="${ry}" stroke="#5a3a1a" stroke-width="6" stroke-linecap="round"/>
+           <circle cx="${cx}" cy="${py}" r="5" fill="#2b1a0c"/>`;
+  L.pan[r] = {};
+  for (const [x, y, amt, side] of [[lx, ly, M.N[r], "N"], [rx, ry, M.S[r], "S"]]) {
+    const top = y + 34, pw = 54, ph = 46, lv = Math.min(1, amt / maxW) * (ph - 4);
+    const hot = lit.pans.has(`${r}${side}`);
+    s += `<line x1="${x}" y1="${y}" x2="${x - pw / 2 + 4}" y2="${top}" stroke="#6a5e4c"/><line x1="${x}" y1="${y}" x2="${x + pw / 2 - 4}" y2="${top}" stroke="#6a5e4c"/>
+          <rect x="${x - pw / 2 + 2}" y="${top + ph - 2 - lv}" width="${pw - 4}" height="${lv}" fill="#3d8fd6" opacity=".8"/>
+          <path d="M${x - pw / 2},${top} L${x - pw / 2 + 5},${top + ph} L${x + pw / 2 - 5},${top + ph} L${x + pw / 2},${top}" fill="none" stroke="${hot ? "#2f7fc8" : "#7a4a26"}" stroke-width="${hot ? 4 : 2.2}"/>
+          <text x="${x}" y="${top + ph + 15}" font-size="11" text-anchor="middle" fill="#3a3226">${side === "N" ? "北" : "南"}の皿 ${amt.toFixed(1)}u</text>`;
+    L.pan[r][side] = [x, top];
+  }
+  s += `<text x="${cx}" y="${py - 14}" font-size="12" text-anchor="middle" fill="#c0392b" font-weight="bold">${TILT_JA[t]}</text>`;
+  return { svg: s, tip: ang };
+}
+
+function drawStone(it, p, lit) {
+  const { x: X, y: Y, k } = it, ins = M.P.prog[k], r = ins.r, cx = X + 145;
+  const sx = px => X + 55 + (px - 20) * 180 / 260, sy = py => Y + 225 + (py - 10) * 255 / 490;
+  let s = `<text x="${X + 12}" y="${Y + 22}" font-size="14" font-weight="bold">駅${k}：盤（石）＋ 天秤「${regName(r)}」</text>`;
+  s += tokenCup(k, X + 34, Y + 62);
+  // 電源：東の導水 → 門 → 支柱の上の 3u の升 → 漏斗
+  const hotPow = lit.power && p.k === k;
+  s += `<rect x="${cx - 46}" y="${Y + 32}" width="92" height="20" rx="4" fill="#e9f2fb" stroke="#9fc3e6"/>
+        <text x="${cx}" y="${Y + 46}" font-size="11" text-anchor="middle">電源（東の導水）</text>
+        <line x1="${cx}" y1="${Y + 52}" x2="${cx}" y2="${Y + 66}" stroke="${hotPow ? "#2f7fc8" : "#9b958a"}" stroke-width="${hotPow ? 5 : 2}" ${hotPow ? "" : 'stroke-dasharray="4 4"'}/>
+        <rect x="${cx - 18}" y="${Y + 66}" width="36" height="18" fill="${hotPow ? "#3d8fd6" : "#fff"}" stroke="#7a4a26" stroke-width="2"/>
+        <text x="${cx + 24}" y="${Y + 80}" font-size="11" fill="#6a5e4c">3u の升</text>`;
+  // 支柱：A1 から立ち上がり、腕で竿を吊る
+  const a1x = sx(PITS.A1[0]), a1y = sy(PITS.A1[1]);
+  s += `<path d="M${a1x + 10},${a1y} L${a1x + 10},${Y + 92} L${cx},${Y + 92} L${cx},${Y + 118}" fill="none" stroke="#a0784f" stroke-width="5"/>
+        <text x="${a1x + 16}" y="${a1y - 26}" font-size="10" fill="#7a4a26">支柱（A1 の穴に立てる）</text>`;
+  const bal = balance(r, cx, Y + 120, 112, lit);
+  s += bal.svg;
+  // 石の上面
+  s += `<rect x="${X + 55}" y="${Y + 225}" width="180" height="255" rx="6" fill="#cfcbc1" stroke="#6f6a60"/>
+        <text x="${X + 48}" y="${Y + 360}" font-size="11" fill="#6a5e4c" text-anchor="end">北</text>
+        <text x="${X + 242}" y="${Y + 360}" font-size="11" fill="#6a5e4c">南</text>`;
+  const seg = (a, b) => {
+    const on = lit.pits.has(`${k}${a}`) && lit.pits.has(`${k}${b}`);
+    return `<line x1="${sx(PITS[a][0])}" y1="${sy(PITS[a][1])}" x2="${sx(PITS[b][0])}" y2="${sy(PITS[b][1])}" stroke="${on ? "#2f7fc8" : "#8f897d"}" stroke-width="${on ? 5 : 3}" stroke-linecap="round"/>`;
+  };
+  s += seg("A2", "BL") + seg("BL", "CL") + seg("CL", "DL") + seg("A3", "BR") + seg("BR", "CR") + seg("CR", "DR") + seg("A4", "E1") + seg("E1", "E2") + seg("E2", "F") + seg("E2", "G");
+  s += `<ellipse cx="${sx(150)}" cy="${sy(250)}" rx="22" ry="34" fill="#b7b2a7" stroke="#6f6a60"/>`;
+  L.pit[k] = {};
+  for (const [name, [px, py]] of Object.entries(PITS)) {
+    const on = lit.pits.has(`${k}${name}`), x = sx(px), y = sy(py), rad = name === "A1" ? 8 : name.startsWith("A") || name === "F" ? 7 : 12;
+    L.pit[k][name] = [x, y];
+    s += `<circle cx="${x}" cy="${y}" r="${rad}" fill="${name === "A1" ? "#8a6a4a" : on ? "#3d8fd6" : "#b7b2a7"}" stroke="#6f6a60"/>
+          <text x="${x}" y="${y + 3.5}" font-size="9" text-anchor="middle" fill="${on || name === "A1" ? "#fff" : "#3a3226"}">${name}</text>`;
+  }
+  // 指し樋：竿の支点から A 群へ垂れ、竿と反対向き（軽い側）へ振れる
+  const tip = bal.tip > 0 ? "A2" : bal.tip < 0 ? "A3" : "A4";
+  const hotPtr = lit.pointer && p.k === k;
+  s += `<line x1="${cx}" y1="${Y + 120}" x2="${L.pit[k][tip][0]}" y2="${L.pit[k][tip][1] - 8}" stroke="${hotPtr ? "#2f7fc8" : "#6b8f2a"}" stroke-width="6" stroke-linecap="round" opacity=".9"/>
+        <text x="${cx + 8}" y="${Y + 210}" font-size="10" fill="#4d6b1c">指し樋</text>`;
+  // 中央の列の出口
+  const f = L.pit[k].F;
+  s += `<text x="${f[0]}" y="${f[1] + 20}" font-size="10" text-anchor="middle" fill="#6a5e4c">F → 西の下流</text>`;
+  return s;
+}
+
+function drawInc(it, p, lit) {
+  const { x: X, y: Y, k } = it, ins = M.P.prog[k];
+  const hot = lit.power && p.k === k;
+  L.incOut = L.incOut || {};
+  L.incOut[k] = [X + 150, Y + 140];
+  return `<text x="${X + 12}" y="${Y + 22}" font-size="14" font-weight="bold">駅${k}：1 足す駅</text>${tokenCup(k, X + 40, Y + 70)}
+          <rect x="${X + 104}" y="${Y + 46}" width="92" height="20" rx="4" fill="#e9f2fb" stroke="#9fc3e6"/>
+          <text x="${X + 150}" y="${Y + 60}" font-size="11" text-anchor="middle">電源（東の導水）</text>
+          <line x1="${X + 150}" y1="${Y + 66}" x2="${X + 150}" y2="${Y + 120}" stroke="${hot ? "#2f7fc8" : "#9b958a"}" stroke-width="${hot ? 5 : 2}" ${hot ? "" : 'stroke-dasharray="4 4"'}/>
+          <rect x="${X + 128}" y="${Y + 120}" width="44" height="22" fill="${hot ? "#3d8fd6" : "#fff"}" stroke="#7a4a26" stroke-width="2"/>
+          <text x="${X + 150}" y="${Y + 160}" font-size="11" text-anchor="middle" fill="#6a5e4c">2u の升</text>
+          <text x="${X + 12}" y="${Y + 196}" font-size="11" fill="#6a5e4c">1u → ${regName(ins.r)} の北の皿</text>
+          <text x="${X + 12}" y="${Y + 212}" font-size="11" fill="#6a5e4c">1u → 駅${ins.next} の手番</text>`;
+}
+
+function drawHalt(it) {
+  const { x: X, y: Y, k } = it;
+  return `<text x="${X + 12}" y="${Y + 22}" font-size="14" font-weight="bold">駅${k}：停止</text>${tokenCup(k, X + 85, Y + 70)}
+          <text x="${X + 85}" y="${Y + 132}" font-size="11" text-anchor="middle" fill="#6a5e4c">手番の水が来たら終わり</text>`;
+}
+
+function drawRegCard(it) {
+  const { x: X, y: Y, r } = it;
+  const bal = balance(r, X + 115, Y + 70, 80, litSet(P || M.plan()));
+  return `<text x="${X + 12}" y="${Y + 22}" font-size="14" font-weight="bold">天秤「${regName(r)}」</text>
+          <text x="${X + 12}" y="${Y + 40}" font-size="11" fill="#6a5e4c">盤を持たない（水を受けるだけ）</text>${bal.svg}
+          <rect x="${X + 105}" y="${Y + 70}" width="20" height="40" fill="#c9a27a"/>`;
+}
+
+// 盤どうし・天秤どうしをつなぐ水の道
+function curve(a, b, hot, label) {
+  if (!a || !b) return "";
+  const [x1, y1] = a, [x2, y2] = b, my = Math.min(y1, y2) - 40 - Math.abs(x2 - x1) * 0.06;
+  const d = `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2 - 4}`;
+  return `<path d="${d}" fill="none" stroke="${hot ? "#2f7fc8" : "#9b958a"}" stroke-width="${hot ? 4 : 1.3}" ${hot ? "" : 'stroke-dasharray="5 5"'} marker-end="url(#${hot ? "ah" : "ag"})" opacity="${hot ? 1 : .8}"/>` +
+         (hot && label ? `<text x="${(x1 + x2) / 2}" y="${my + 12}" font-size="12" text-anchor="middle" fill="#2f7fc8" font-weight="bold">${label}</text>` : "");
+}
+function drawWires(p, lit) {
+  let s = "";
+  M.P.prog.forEach((ins, k) => {
+    if (ins.op === "STEP") {
+      const pit = L.pit[k];
+      // B → 自分の天秤の軽い側の皿（北の列 → 北の皿、南の列 → 南の皿）
+      s += curve(pit.BL, L.pan[ins.r].N, lit.wires.has(`${k}B`) && p.feed === "N", "B：軽い側の皿へ戻す");
+      s += curve(pit.BR, L.pan[ins.r].S, lit.wires.has(`${k}B`) && p.feed === "S", "B：軽い側の皿へ戻す");
+      // C → 移す先の天秤の皿
+      if (ins.to) {
+        const [t, sign] = ins.to;
+        s += curve(pit.CR, L.pan[t][sign > 0 ? "N" : "S"], lit.wires.has(`${k}C`) && p.row === "south", `C：${regName(t)} へ`);
+        s += curve(pit.CL, L.pan[t][sign > 0 ? "S" : "N"], lit.wires.has(`${k}C`) && p.row === "north", `C：${regName(t)} へ`);
+      }
+      // D → ≠0 の次の駅、E1 → =0 の次の駅（控えに入り、人が手番の皿へ運ぶ）
+      s += curve(pit.DR, L.tok[ins.nz], lit.wires.has(`${k}D`) && p.row === "south", `D：手番を駅${ins.nz}へ`);
+      s += curve(pit.DL, L.tok[ins.nz], lit.wires.has(`${k}D`) && p.row === "north", `D：手番を駅${ins.nz}へ`);
+      s += curve(pit.E1, L.tok[ins.z], lit.wires.has(`${k}E`), `E1：手番を駅${ins.z}へ`);
+    } else if (ins.op === "INC") {
+      s += curve(L.incOut[k], L.pan[ins.r].N, lit.wires.has(`${k}I`), `${regName(ins.r)} に 1u`);
+      s += curve(L.incOut[k], L.tok[ins.next], lit.wires.has(`${k}I`), `手番を駅${ins.next}へ`);
+    }
+  });
+  return s;
+}
+
+// いまの段階で光らせるもの
+function litSet(p) {
+  const S = { power: false, pointer: false, pits: new Set(), wires: new Set(), pans: new Set() };
+  if (!p || p.op === "HALT" || phase === 0) return S;
+  if (phase >= 1) S.power = true;
+  if (p.op === "STEP" && phase >= 2) {
+    S.pointer = true;
+    const row = p.row === "south" ? ["A3", "BR", "CR", "DR"] : p.row === "north" ? ["A2", "BL", "CL", "DL"] : ["A4", "E1", "E2", "G", "F"];
+    row.forEach(n => S.pits.add(`${p.k}${n}`));
+  }
+  if (phase === 3) {
+    if (p.op === "INC") { S.wires.add(`${p.k}I`); S.pans.add(`${p.r}N`); }
+    else if (p.row === "center") S.wires.add(`${p.k}E`);
+    else {
+      ["B", "C", "D"].forEach(w => S.wires.add(`${p.k}${w}`));
+      S.pans.add(`${p.r}${p.feed}`);
+      if (p.dest) S.pans.add(`${p.dest.s}${p.dest.pan}`);
+    }
+  }
+  return S;
+}
+
+function caption(p) {
+  if (!p) return "セットしてください。";
+  if (p.op === "HALT") { const res = M.result(); return `<b>停止</b>：手番の水が停止の駅に来た。答え ＝ <b>${res.text}</b>`; }
+  if (phase === 0) return `次は<b>駅${p.k}</b>の番（手番の水がこの駅の皿にある）。「1手順」で、水の流れを4段階で見られます。`;
+  if (p.op === "INC") {
+    return [null,
+      `<b>① 電源</b>：駅${p.k} の皿に手番の水があるので門が開き、東の導水から 2u がこの駅の升へ入る。ほかの駅の門は閉じていて、電源の水は捨て溝へ流れる。`,
+      `<b>② 升</b>：2u の升が満ちる。`,
+      `<b>③ 流す</b>：1u を「${regName(p.r)}」の北の皿へ（${regName(p.r)} が 1 増える）。1u は控えへ入り、人が駅${p.next} の手番の皿へ運ぶ。`,
+      `<b>④ 結果</b>：${regName(p.r)} ＝ ${M.value(p.r)}。手番は駅${p.next} へ移った。`][phase];
+  }
+  const reg = regName(p.r), side = p.feed === "S" ? "南" : "北";
+  const rowJa = p.row === "south" ? "南の列（A3 → BR・CR・DR）" : p.row === "north" ? "北の列（A2 → BL・CL・DL）" : "中央の列（A4 → E1・E2 → F）";
+  const ins = M.P.prog[p.k];
+  return [null,
+    `<b>① 電源</b>：駅${p.k} の皿に手番の水があるので門が開き、東の導水から 3u が、A1 に立てた支柱の上の升へ入る。升の水は竿の支点の漏斗へ落ち、指し樋を通る。`,
+    `<b>② 振り分け</b>：天秤「${reg}」は <b>${TILT_JA[p.tilt]}</b>（${reg} ＝ ${M.value(p.r)}）。指し樋は竿と反対向きに振れて、${rowJa}へ水を落とす。3u がすり切りの升に 1u ずつ溜まる。`,
+    p.row === "center"
+      ? `<b>③ 升を空ける</b>：E1 の 1u は控えへ入り、人が駅${p.next} の手番の皿へ運ぶ（${reg} が 0 になったので次の命令へ）。E2 の水は F から西の下流へ出る。`
+      : `<b>③ 升を空ける</b>：B の 1u → 天秤「${reg}」の${side}の皿（軽い側。${reg} が 0 へ 1 近づく）。C の 1u → ${p.dest ? `天秤「${regName(p.dest.s)}」の${p.dest.pan === "N" ? "北" : "南"}の皿（${regName(p.dest.s)} が 1 ${p.dest.pan === "N" ? "増える" : "減る"}）` : "捨て溝"}。D の 1u → 控えに入り、人が駅${p.next} の手番の皿へ運ぶ。`,
+    `<b>④ 結果</b>：${reg} ＝ ${M.value(p.r)}${p.dest ? `、${regName(p.dest.s)} ＝ ${M.value(p.dest.s)}` : ""}。手番は駅${p.next} へ移った。${ins.nz === p.k && p.row !== "center" ? "（同じ盤をもう一度。0 になるまでくり返す）" : ""}`][phase];
+}
+
+function drawSide(p) {
   const cur = M.current();
   $("prog").innerHTML = M.P.prog.map((ins, k) =>
-    `<div class="${k === cur ? "cur" : ""}">${insText(ins, k)}${ins.note ? `<small>${ins.note}</small>` : ""}</div>`).join("");
-  drawBoard();
-  drawRegs();
-  const v = M.values(), res = M.result();
-  const sym = M.P.symbol;
+    `<div class="${k === (P ? P.k : cur) ? "cur" : ""}">${insText(ins, k)}${ins.note ? `<small>${ins.note}</small>` : ""}</div>`).join("");
+  $("caption").innerHTML = caption(p);
+  const res = M.result(), sym = M.P.symbol;
   if (M.halted()) {
     const ok = res.ok(M.a, M.b);
     $("result").innerHTML = `${M.a} ${sym} ${M.b} = ${res.text} <span class="${ok ? "ok" : "ng"}">${ok ? "✓" : "✗（升の誤差で数え間違えた）"}</span>`;
-  } else if (M.key === "div" && M.b === 0 && M.ticks > 200) {
-    $("result").innerHTML = `${M.a} ÷ 0 は止まらない（b=0 を引き続ける）`;
-  } else $("result").textContent = `${M.a} ${sym} ${M.b} = …（計算中）`;
-  $("stat").innerHTML = `手順 ${M.ticks} 回　注いだ水 ${M.poured.toFixed(0)}u　下流（F）へ ${M.downstream.toFixed(0)}u<br>` +
-    `皿に溜まった水：` + M.N.map((n, r) => `${regName(r)} 北${n.toFixed(1)}・南${M.S[r].toFixed(1)}`).join("　");
+  } else if (M.key === "div" && M.b === 0 && M.ticks > 200) $("result").innerHTML = `${M.a} ÷ 0 は止まらない`;
+  else $("result").textContent = `${M.a} ${sym} ${M.b} = …（計算中）`;
+  $("stat").innerHTML = `手順 ${M.ticks} 回　注いだ水 ${M.poured.toFixed(0)}u　下流へ ${M.downstream.toFixed(0)}u<br>` +
+    M.P.regs.map((n, r) => `${n} ＝ ${M.value(r)}`).join("　");
   $("log").innerHTML = logs.map(l => `<div>${l}</div>`).join("");
 }
 
-const PITS = { A1:[150,40], A2:[122,64], A3:[178,64], A4:[150,74], BL:[78,128], CL:[56,196], DL:[80,268], BR:[222,128], CR:[244,196], DR:[220,268],
-               E1:[150,210], E2:[150,290], G:[98,350], F:[150,470] };
-function drawBoard() {
-  const L = M.last, cur = M.current();
-  let ins = L ? M.P.prog[L.k] : M.P.prog[Math.max(0, cur)];
-  const k = L ? L.k : cur;
-  const lit = new Set();
-  if (L && L.op === "STEP") {
-    lit.add("A1");
-    if (L.row === "center") ["A4", "E1", "E2", "G", "F"].forEach(p => lit.add(p));
-    if (L.row === "south") ["A3", "BR", "CR", "DR"].forEach(p => lit.add(p));
-    if (L.row === "north") ["A2", "BL", "CL", "DL"].forEach(p => lit.add(p));
-  }
-  $("boardTitle").textContent = ins && ins.op === "STEP" ? `いまの盤：駅${k}（酒船石1枚）` : `いまの駅：駅${k}`;
-  const line = (a, b) => `<line x1="${PITS[a][0]}" y1="${PITS[a][1]}" x2="${PITS[b][0]}" y2="${PITS[b][1]}" stroke="${lit.has(a) && lit.has(b) ? "#2f7fc8" : "#8f897d"}" stroke-width="${lit.has(a) && lit.has(b) ? 6 : 4}" stroke-linecap="round"/>`;
-  let s = `<rect x="20" y="10" width="260" height="490" rx="10" fill="#cfcbc1" stroke="#6f6a60"/>` +
-          `<text x="150" y="8" font-size="11" text-anchor="middle" fill="#6a5e4c">東（高い）</text>` +
-          `<text x="150" y="515" font-size="11" text-anchor="middle" fill="#6a5e4c">西（低い）→ 下流</text>` +
-          `<text x="14" y="260" font-size="11" fill="#6a5e4c" transform="rotate(-90 14 260)">北</text>` +
-          `<text x="292" y="250" font-size="11" fill="#6a5e4c" transform="rotate(90 292 250)">南</text>`;
-  s += line("A2", "BL") + line("BL", "CL") + line("CL", "DL") + line("A3", "BR") + line("BR", "CR") + line("CR", "DR") +
-       line("A4", "E1") + line("E1", "E2") + line("E2", "F") + line("E2", "G") + line("A1", "A2") + line("A1", "A3") + line("A1", "A4");
-  s += `<ellipse cx="150" cy="250" rx="34" ry="62" fill="${lit.has("E1") ? "#bcd8f2" : "#b7b2a7"}" stroke="#6f6a60"/>`;
-  for (const [p, [x, y]] of Object.entries(PITS)) {
-    if (p === "E1" || p === "E2") { s += `<circle cx="${x}" cy="${y}" r="10" fill="${lit.has(p) ? "#3d8fd6" : "#a29d92"}"/>`; }
-    else {
-      const r = p.startsWith("A") ? 11 : (p === "F" ? 10 : 20);
-      s += `<circle cx="${x}" cy="${y}" r="${r}" fill="${lit.has(p) ? "#3d8fd6" : "#b7b2a7"}" stroke="#6f6a60" stroke-width="1.5"/>`;
-    }
-    s += `<text x="${x}" y="${y + 4}" font-size="10" text-anchor="middle" fill="${lit.has(p) ? "#fff" : "#3a3226"}">${p}</text>`;
-  }
-  $("board").innerHTML = s;
-  const map = ins && ins.op === "STEP"
-    ? `<br>この盤のつなぎ方：B → ${regName(ins.r)} の軽い側の皿、C → ${ins.to ? regName(ins.to[0]) + (ins.to[1] > 0 ? "" : "（引く）") : "捨て溝"}、D → 駅${ins.nz}（≠0）、E1 → 駅${ins.z}（=0）、E2 → F → 下流`
-    : "";
-  $("boardNote").innerHTML = (!L ? "「1手順」か「実行」で動かす" :
-    L.op === "INC" ? `駅${L.k} は盤ではなく、${regName(L.r)} の北の皿に 1u 足す駅` :
-    `指し樋は ${regName(L.r)} の竿にかかる。${L.row === "center" ? "釣り合い → 中央の列だけに水" : (L.tilt === "north" ? "北" : "南") + "が重い → 指し樋の先は反対の" + (L.row === "south" ? "南" : "北") + "の列へ"}`) + map;
+// ---------------- 進め方 ----------------
+function setup() {
+  stop(); phase = 0; P = null;
+  const key = $("op").value;
+  const a = Math.max(0, Math.min(20, +$("a").value || 0)), b = Math.max(0, Math.min(20, +$("b").value || 0));
+  M = new Machine(key, a, b, { sd: +$("sd").value });
+  logs = [`セット：a=${a}, b=${b}（${PROGRAMS[key].label}）。a, b の数だけ、その天秤の北の皿に水を入れ、駅0 に手番の水を置いた`];
+  draw();
 }
-
-function drawRegs() {
-  const n = M.N.length, w = 520 / n;
-  const maxW = Math.max(4, ...M.N, ...M.S);
-  let s = "";
-  M.N.forEach((_, r) => {
-    const cx = w * r + w / 2, py = 70, L = Math.min(48, w / 2 - 8);
-    const t = M.tilt(r), ang = t === "north" ? -12 : t === "south" ? 12 : 0;
-    const rad = ang * Math.PI / 180;
-    const lx = cx - L * Math.cos(rad), ly = py - L * Math.sin(rad), rx = cx + L * Math.cos(rad), ry = py + L * Math.sin(rad);
-    s += `<line x1="${cx}" y1="${py}" x2="${cx}" y2="${py + 40}" stroke="#c9a27a" stroke-width="5"/>`;
-    s += `<line x1="${lx}" y1="${ly}" x2="${rx}" y2="${ry}" stroke="#5a3a1a" stroke-width="5" stroke-linecap="round"/>`;
-    s += `<circle cx="${cx}" cy="${py}" r="4" fill="#2b1a0c"/>`;
-    for (const [x, y, amt, lab] of [[lx, ly, M.N[r], "北"], [rx, ry, M.S[r], "南"]]) {
-      const top = y + 30, h = 50, pw = Math.min(40, w / 3);
-      const lv = Math.min(1, amt / maxW) * (h - 4);
-      s += `<line x1="${x}" y1="${y}" x2="${x}" y2="${top}" stroke="#6a5e4c"/>`;
-      s += `<rect x="${x - pw / 2 + 2}" y="${top + h - 2 - lv}" width="${pw - 4}" height="${lv}" fill="#3d8fd6" opacity=".8"/>`;
-      s += `<rect x="${x - pw / 2}" y="${top}" width="${pw}" height="${h}" fill="none" stroke="#7a4a26" stroke-width="2"/>`;
-      s += `<text x="${x}" y="${top + h + 14}" font-size="10" text-anchor="middle" fill="#6a5e4c">${lab} ${amt.toFixed(1)}</text>`;
-    }
-    s += `<text x="${cx}" y="22" font-size="13" text-anchor="middle" font-weight="bold">${regName(r)}</text>`;
-    s += `<text x="${cx}" y="245" font-size="26" text-anchor="middle" font-weight="bold" fill="#2f7fc8">${M.value(r)}</text>`;
-  });
-  $("regs").innerHTML = s;
+function applyTick() {
+  const p = M.plan();
+  M.tick();
+  if (p.op === "INC") logs.unshift(`${M.ticks}：駅${p.k} ${regName(p.r)} に 1 → 駅${p.next}`);
+  else logs.unshift(`${M.ticks}：駅${p.k} 天秤「${regName(p.r)}」${TILT_JA[p.tilt]} → ${p.row === "center" ? "中央の列" : p.row === "south" ? "南の列" : "北の列"} → 駅${p.next}`);
+  if (M.halted()) logs.unshift(`${M.ticks}：停止。答え ${M.result().text}`);
+  logs = logs.slice(0, 80);
 }
+const wait = ms => new Promise(res => setTimeout(res, ms));
+async function stepDetailed() {
+  if (busy || !M || M.halted()) return;
+  busy = true;
+  P = M.plan();
+  const dt = 2600 / +$("spd").value;
+  for (phase = 1; phase <= 3; phase++) { draw(); await wait(dt); }
+  applyTick(); phase = 4; draw(); await wait(dt);
+  phase = 0; P = null; draw();
+  busy = false;
+}
+function stepFast() { if (!M || M.halted()) return; applyTick(); phase = 0; P = null; draw(); }
+async function run() {
+  if (timer) { stop(); return; }
+  if (!M || M.halted()) setup();
+  timer = true; $("run").textContent = "■ 停止";
+  while (timer && !M.halted()) {
+    if ($("detail").checked) await stepDetailed();
+    else { stepFast(); await wait(1000 / +$("spd").value); }
+  }
+  stop();
+}
+function stop() { timer = null; $("run").textContent = "▶ 実行"; }
 
-// ---------------- 全部試す ----------------
 function testAll() {
   stop();
   const sd = +$("sd").value, lines = [];
@@ -210,13 +382,12 @@ function testAll() {
   draw();
 }
 
-$("set").onclick = setup; $("step").onclick = step; $("run").onclick = run; $("all").onclick = testAll;
-$("op").onchange = setup;
-const lab = () => { $("spdv").textContent = `${$("spd").value}回/秒`; $("sdv").textContent = `${(+$("sd").value).toFixed(2)}u`; };
-$("spd").oninput = () => { lab(); if (timer) { stop(); run(); } };
-$("sd").oninput = () => { lab(); };
+$("set").onclick = setup; $("step").onclick = () => $("detail").checked ? stepDetailed() : stepFast();
+$("run").onclick = run; $("all").onclick = testAll; $("op").onchange = setup;
+const lab = () => { $("spdv").textContent = `×${$("spd").value}`; $("sdv").textContent = `${(+$("sd").value).toFixed(2)}u`; };
+$("spd").oninput = lab; $("sd").oninput = lab;
 lab(); setup();
-window.__arith = { get M() { return M; }, setup, step, testAll };
+window.__arith = { get M() { return M; }, setup, stepFast, stepDetailed, testAll, get phase() { return phase; }, set phase(v) { phase = v; }, draw, setP(v) { P = v; } };
 </script>
 </body>
 </html>
